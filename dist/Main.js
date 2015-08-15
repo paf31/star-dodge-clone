@@ -309,8 +309,16 @@ var PS = { };
   var $foreign = PS["Control.Monad.Eff.Random"];
   var Prelude = PS["Prelude"];
   var Data_Int = PS["Data.Int"];
-  var Control_Monad_Eff = PS["Control.Monad.Eff"];
-  exports["random"] = $foreign.random;;
+  var Control_Monad_Eff = PS["Control.Monad.Eff"];     
+  var randomRange = function (min) {
+      return function (max) {
+          return function __do() {
+              var _4 = $foreign.random();
+              return Prelude["return"](Control_Monad_Eff.applicativeEff)(_4 * (max - min) + min)();
+          };
+      };
+  };
+  exports["randomRange"] = randomRange;;
  
 })(PS["Control.Monad.Eff.Random"] = PS["Control.Monad.Eff.Random"] || {});
 (function(exports) {
@@ -949,6 +957,15 @@ var PS = { };
       };
   };
 
+  exports.strokeRect = function(ctx) {
+      return function(r) {
+          return function() {
+              ctx.strokeRect(r.x, r.y, r.w, r.h);
+              return ctx;
+          };
+      };
+  };
+
   exports.scale = function(t) {
       return function(ctx) {
           return function() {
@@ -994,6 +1011,7 @@ var PS = { };
   exports["strokePath"] = strokePath;
   exports["getCanvasElementById"] = getCanvasElementById;
   exports["scale"] = $foreign.scale;
+  exports["strokeRect"] = $foreign.strokeRect;
   exports["fillRect"] = $foreign.fillRect;
   exports["arc"] = $foreign.arc;
   exports["closePath"] = $foreign.closePath;
@@ -1272,7 +1290,7 @@ var PS = { };
   };
   var newGame = (function () {
       var p = {
-          x: 0.0, 
+          x: 5.0e-2, 
           y: 0.5
       };
       return new Playing({
@@ -1303,7 +1321,7 @@ var PS = { };
       var _8 = Graphics_Canvas.getCanvasElementById("canvas")();
       if (_8 instanceof Data_Maybe.Just) {
           var _7 = Graphics_Canvas.getContext2D(_8.value0)();
-          var _6 = Data_Traversable["for"](Control_Monad_Eff.applicativeEff)(Data_List.traversableList)(Data_List[".."](1)(100))(function (_9) {
+          var _6 = Data_Traversable["for"](Control_Monad_Eff.applicativeEff)(Data_List.traversableList)(Data_List[".."](1)(80))(function (_9) {
               return Prelude["<*>"](Control_Monad_Eff.applyEff)(Prelude["<$>"](Control_Monad_Eff.functorEff)(function (_0) {
                   return function (_1) {
                       return {
@@ -1311,7 +1329,7 @@ var PS = { };
                           y: _1
                       };
                   };
-              })(Control_Monad_Eff_Random.random))(Control_Monad_Eff_Random.random);
+              })(Control_Monad_Eff_Random.randomRange(0.1)(0.9)))(Control_Monad_Eff_Random.randomRange(0.1)(0.9));
           })();
           var _5 = Signal_DOM.animationFrame();
           var _4 = Signal_DOM.keyPressed(32)();
@@ -1334,7 +1352,7 @@ var PS = { };
                               return Graphics_Canvas.stroke(_7)();
                           };
                       };
-                      throw new Error("Failed pattern match at Main line 177, column 7 - line 178, column 7: " + [ path.constructor.name ]);
+                      throw new Error("Failed pattern match at Main line 169, column 7 - line 170, column 7: " + [ path.constructor.name ]);
                   })();
               };
           };
@@ -1349,14 +1367,14 @@ var PS = { };
                           if (!inputs.space) {
                               return Down.value;
                           };
-                          throw new Error("Failed pattern match at Main line 70, column 1 - line 187, column 30: " + [ inputs.space.constructor.name ]);
+                          throw new Error("Failed pattern match at Main line 70, column 1 - line 179, column 30: " + [ inputs.space.constructor.name ]);
                       })()
                   });
               };
           };
           var move = function (pt) {
               return function (space_1) {
-                  if (pt.x < 0.998) {
+                  if (pt.x < 0.9480000000000001) {
                       var dy = (function () {
                           if (space_1) {
                               return 1.0;
@@ -1373,14 +1391,14 @@ var PS = { };
                   };
                   if (Prelude.otherwise) {
                       return new Data_Either.Left(new Data_Tuple.Tuple({
-                          x: 1.0, 
+                          x: 0.95, 
                           y: pt.y
                       }, {
-                          x: 0.0, 
+                          x: 5.0e-2, 
                           y: pt.y
                       }));
                   };
-                  throw new Error("Failed pattern match at Main line 70, column 1 - line 187, column 30: " + [ pt.constructor.name, space_1.constructor.name ]);
+                  throw new Error("Failed pattern match at Main line 70, column 1 - line 179, column 30: " + [ pt.constructor.name, space_1.constructor.name ]);
               };
           };
           var linesIntersect = function (p1) {
@@ -1419,10 +1437,10 @@ var PS = { };
           };
           var testCollision = function (_12) {
               if (_12 instanceof Data_List.Cons && (_12.value0 instanceof Data_List.Cons && _12.value0.value1 instanceof Data_List.Cons)) {
-                  if (_12.value0.value0.y <= 0.1) {
+                  if (_12.value0.value0.y <= 5.0e-2) {
                       return true;
                   };
-                  if (_12.value0.value0.y >= 0.9) {
+                  if (_12.value0.value0.y >= 0.95) {
                       return true;
                   };
                   if (Data_Foldable.any(Data_List.foldableList)(Prelude.booleanAlgebraBoolean)(Prelude["<<<"](Prelude.semigroupoidFn)(function (_3) {
@@ -1437,7 +1455,7 @@ var PS = { };
                       return false;
                   };
               };
-              throw new Error("Failed pattern match at Main line 70, column 1 - line 187, column 30: " + [ _12.constructor.name ]);
+              throw new Error("Failed pattern match at Main line 70, column 1 - line 179, column 30: " + [ _12.constructor.name ]);
           };
           var inputs = Prelude["<$>"](Signal.functorSignal)(function (_2) {
               return {
@@ -1488,14 +1506,18 @@ var PS = { };
                   h: 1.0
               })();
               Graphics_Canvas.setStrokeStyle("lightgreen")(_7)();
-              Graphics_Canvas.beginPath(_7)();
-              Graphics_Canvas.moveTo(_7)(0.0)(0.1)();
-              Graphics_Canvas.lineTo(_7)(1.0)(0.1)();
-              Graphics_Canvas.stroke(_7)();
-              Graphics_Canvas.beginPath(_7)();
-              Graphics_Canvas.moveTo(_7)(0.0)(0.9)();
-              Graphics_Canvas.lineTo(_7)(1.0)(0.9)();
-              Graphics_Canvas.stroke(_7)();
+              Graphics_Canvas.strokeRect(_7)({
+                  x: 5.0e-2, 
+                  y: 5.0e-2, 
+                  w: 0.9, 
+                  h: 0.9
+              })();
+              Graphics_Canvas.strokeRect(_7)({
+                  x: 4.5e-2, 
+                  y: 4.5e-2, 
+                  w: 0.9099999999999999, 
+                  h: 0.9099999999999999
+              })();
               Graphics_Canvas.setFillStyle("#222")(_7)();
               Graphics_Canvas.setStrokeStyle("lightgreen")(_7)();
               return Data_Foldable.for_(Control_Monad_Eff.applicativeEff)(Data_List.foldableList)(_6)(function (star) {
@@ -1528,11 +1550,11 @@ var PS = { };
                       return renderPaths(_13.value0.paths)();
                   });
               };
-              throw new Error("Failed pattern match at Main line 70, column 1 - line 187, column 30: " + [ _13.constructor.name ]);
+              throw new Error("Failed pattern match at Main line 70, column 1 - line 179, column 30: " + [ _13.constructor.name ]);
           };
           return Signal.runSignal(Prelude["<$>"](Signal.functorSignal)(render)(state))();
       };
-      throw new Error("Failed pattern match at Main line 70, column 1 - line 187, column 30: " + [ _8.constructor.name ]);
+      throw new Error("Failed pattern match at Main line 70, column 1 - line 179, column 30: " + [ _8.constructor.name ]);
   };
   exports["Playing"] = Playing;
   exports["GameOver"] = GameOver;

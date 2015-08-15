@@ -54,7 +54,7 @@ newGame = Playing
   , direction: Down
   }
   where
-  p = { x: 0.0
+  p = { x: 0.05
       , y: 0.5
       }
   
@@ -71,7 +71,7 @@ main = do
   Just canvas <- getCanvasElementById "canvas"
   ctx <- getContext2D canvas
   
-  stars <- for (1 .. 100) \_ -> { x: _, y: _ } <$> random <*> random
+  stars <- for (1 .. 80) \_ -> { x: _, y: _ } <$> randomRange 0.1 0.9 <*> randomRange 0.1 0.9
   
   frame <- animationFrame
   space <- keyPressed 32  
@@ -98,8 +98,8 @@ main = do
 
       testCollision :: List (List Point) -> Boolean
       testCollision (Cons (Cons p1 (Cons p2 _)) pss) 
-        | p1.y <= 0.1 = true
-        | p1.y >= 0.9 = true
+        | p1.y <= 0.05 = true
+        | p1.y >= 0.95 = true
         | any ((< 0.000225) <<< dist2 p1) stars = true
         | any (testLineSegments p1 p2) pss = true
         | otherwise = false
@@ -125,13 +125,13 @@ main = do
 
       move :: Point -> Boolean -> Either (Tuple Point Point) Point
       move pt space 
-        | pt.x < 0.998
+        | pt.x < 0.948
           = let dy = if space then 1.0 else -1.0
             in Right { x: pt.x + 0.002
                      , y: pt.y + dy * 0.002
                      }
         | otherwise
-          = Left (Tuple { x: 1.0, y: pt.y } { x: 0.0, y: pt.y })
+          = Left (Tuple { x: 0.95, y: pt.y } { x: 0.05, y: pt.y })
 
       background :: Eff _ Unit
       background = void do
@@ -139,17 +139,9 @@ main = do
         fillRect ctx { x: 0.0, y: 0.0, w: 1.0, h: 1.0 }
             
         setStrokeStyle "lightgreen" ctx
+        strokeRect ctx { x: 0.05, y: 0.05, w: 0.9, h: 0.9 }
+        strokeRect ctx { x: 0.045, y: 0.045, w: 0.91, h: 0.91 }
         
-        beginPath ctx
-        moveTo ctx 0.0 0.1
-        lineTo ctx 1.0 0.1
-        stroke ctx
-        
-        beginPath ctx
-        moveTo ctx 0.0 0.9
-        lineTo ctx 1.0 0.9
-        stroke ctx
-
         setFillStyle "#222" ctx
         setStrokeStyle "lightgreen" ctx
         for_ stars \star -> do
