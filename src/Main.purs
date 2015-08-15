@@ -138,7 +138,7 @@ main = do
         setFillStyle "black" ctx
         fillRect ctx { x: 0.0, y: 0.0, w: 1.0, h: 1.0 }
             
-        setStrokeStyle "lightblue" ctx
+        setStrokeStyle "lightgreen" ctx
         
         beginPath ctx
         moveTo ctx 0.0 0.1
@@ -151,7 +151,7 @@ main = do
         stroke ctx
 
         setFillStyle "#222" ctx
-        setStrokeStyle "white" ctx
+        setStrokeStyle "lightgreen" ctx
         for_ stars \star -> do
           let path = do arc ctx { x: star.x
                                 , y: star.y
@@ -165,7 +165,7 @@ main = do
 
       renderPaths :: List (List Point) -> Eff _ Unit
       renderPaths paths = do
-        setStrokeStyle "lightblue" ctx
+        setStrokeStyle "lightgreen" ctx
         for_ paths \path -> 
           case path of
             Cons hd tl -> do

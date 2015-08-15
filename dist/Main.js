@@ -1322,7 +1322,7 @@ var PS = { };
           Graphics_Canvas.setLineWidth(1.0e-3)(_7)();
           var renderPaths = function (paths) {
               return function __do() {
-                  Graphics_Canvas.setStrokeStyle("lightblue")(_7)();
+                  Graphics_Canvas.setStrokeStyle("lightgreen")(_7)();
                   return Data_Foldable.for_(Control_Monad_Eff.applicativeEff)(Data_List.foldableList)(paths)(function (path) {
                       if (path instanceof Data_List.Cons) {
                           return function __do() {
@@ -1487,7 +1487,7 @@ var PS = { };
                   w: 1.0, 
                   h: 1.0
               })();
-              Graphics_Canvas.setStrokeStyle("lightblue")(_7)();
+              Graphics_Canvas.setStrokeStyle("lightgreen")(_7)();
               Graphics_Canvas.beginPath(_7)();
               Graphics_Canvas.moveTo(_7)(0.0)(0.1)();
               Graphics_Canvas.lineTo(_7)(1.0)(0.1)();
@@ -1497,7 +1497,7 @@ var PS = { };
               Graphics_Canvas.lineTo(_7)(1.0)(0.9)();
               Graphics_Canvas.stroke(_7)();
               Graphics_Canvas.setFillStyle("#222")(_7)();
-              Graphics_Canvas.setStrokeStyle("white")(_7)();
+              Graphics_Canvas.setStrokeStyle("lightgreen")(_7)();
               return Data_Foldable.for_(Control_Monad_Eff.applicativeEff)(Data_List.foldableList)(_6)(function (star) {
                   var path = function __do() {
                       Graphics_Canvas.arc(_7)({
