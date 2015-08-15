@@ -5,11 +5,14 @@ import Prelude
 import Control.Monad.Eff
 import Control.Monad.Eff.Random
 
+import Data.Int (toNumber)
 import Data.Maybe
+import Data.Tuple (Tuple(..))
+import Data.Either (Either(..))
 import Data.Functor (($>))
 import Data.Foldable (for_)
 import Data.Traversable (for)
-import Data.List (List(..), mapMaybe, (..))
+import Data.List (List(..), (..), singleton, toList)
 
 import Signal
 import Signal.DOM
@@ -18,46 +21,41 @@ import Signal.Time
 import Graphics.Canvas
 
 data Direction = Up | Down
-
-type Point = 
-  { x :: Number
-  , y :: Number
-  }
-
-type MineData = 
-  { pos :: Point
-  , created :: Time
-  , maxRadius :: Number
-  }
+  
+instance eqDirection :: Eq Direction where
+  eq Up Up = true
+  eq Down Down = true
+  eq _ _ = false
   
 type Mine = 
-  { pos :: Point
-  , radius :: Number
+  { x :: Number
+  , y :: Number
+  , r :: Number
   }
 
 type Inputs = 
   { direction :: Direction
   }
 
+type Point = 
+  { x :: Number
+  , y :: Number
+  }
+  
 type GameState = 
-  { pos :: Point
+  { paths :: List (List Point)
+  , direction :: Direction
   }
 
 initialState :: GameState
 initialState = 
-  { pos: { x: 0.0
-         , y: 0.5
-         }
+  { paths: singleton (toList [p, p])
+  , direction: Down
   }
-  
-newMine :: Number -> Number -> Number -> Number -> MineData
-newMine x y m t = 
-  { pos: { x: x
-         , y: y
-         }
-  , created: t
-  , maxRadius: m
-  }
+  where
+  p = { x: 0.0
+      , y: 0.5
+      }
 
 clamp :: Number -> Number
 clamp x
@@ -65,38 +63,25 @@ clamp x
   | x > 1.0 = clamp (x - 1.0)
   | otherwise = x
 
-toMines :: Time -> List MineData -> List Mine
-toMines t = mapMaybe toMine
-  where
-  toMine d | t - d.created < 0.0 = Nothing
-           | t - d.created < 2000.0 = Just { pos: d.pos
-                                           , radius: (t - d.created) / 2000.0 * d.maxRadius
-                                           }
-           | t - d.created < 2500.0 = Just { pos: d.pos
-                                           , radius: (2500.0 - (t - d.created)) / 500.0 * d.maxRadius
-                                           }
-           | otherwise = Nothing
-
 update :: Inputs -> GameState -> GameState
-update inputs state = state { pos = { x: clamp (state.pos.x + 0.001)
-                                    , y: clamp (state.pos.y + dy * 0.001)
-                                    } 
-                            }
-  where
-  dy = case inputs.direction of
-         Up -> 1.0
-         Down -> -1.0
-  
-notTooClose :: GameState -> MineData -> Maybe MineData
-notTooClose st md 
-  | dist st.pos md.pos < 0.05 = Nothing
-  | otherwise = Just md
+update inputs state@{ paths: Cons (Cons hd tl) paths }
+  | state.direction == inputs.direction 
+    = case move hd inputs.direction of
+        Right p -> { paths: Cons (Cons p tl) paths, direction: inputs.direction }
+        Left (Tuple old new) -> { paths: Cons (toList [new, new]) (Cons (Cons old tl) paths), direction: inputs.direction }
+  | otherwise
+    = { paths: Cons (Cons hd (Cons hd tl)) paths, direction: inputs.direction }
 
-dist :: Point -> Point -> Number
-dist p1 p2 = dx * dx + dy * dy
-  where
-  dx = p1.x - p2.x
-  dy = p1.y - p2.y
+move :: Point -> Direction -> Either (Tuple Point Point) Point
+move pt dir 
+  | pt.x < 0.998
+    = let dy Up   = 1.0
+          dy Down = -1.0
+      in Right { x: pt.x + 0.002
+               , y: clamp (pt.y + dy dir * 0.002)
+               }
+  | otherwise
+    = Left (Tuple { x: 1.0, y: pt.y } { x: 0.0, y: pt.y })
   
 main = do
   Just canvas <- getCanvasElementById "canvas"
@@ -104,25 +89,14 @@ main = do
   
   stars <- for (1 .. 100) \_ -> { x: _, y: _ } <$> random <*> random
   
-  scale { scaleX: 600.0, scaleY: 600.0 } ctx
-
   frame <- animationFrame
-  space <- keyPressed 32
-  
-  mineData <- unwrap $ every 500.0 <#> \t -> 
-                do x <- random
-                   y <- random
-                   r <- map (* 0.15) random
-                   return (newMine x y r t)
+  space <- keyPressed 32  
+
+  scale { scaleX: 600.0, scaleY: 600.0 } ctx
+  setLineWidth 0.001 ctx
 
   let direction :: Signal Direction
       direction = map (\b -> if b then Up else Down) space
-  
-      filteredMines :: Signal (Maybe MineData)
-      filteredMines = notTooClose <$> state <*> mineData
-  
-      mines :: Signal (List Mine)
-      mines = toMines <$> frame <*> foldp (\md mds -> maybe mds (`Cons` mds) md) Nil filteredMines
   
       inputs :: Signal Inputs
       inputs = { direction: _ } <$> direction
@@ -130,37 +104,30 @@ main = do
       state :: Signal GameState
       state = foldp update initialState (sampleOn frame inputs)
 
-      render :: GameState -> List Mine -> Eff _ Unit
-      render state mines = void do
+      render :: GameState -> Eff _ Unit
+      render state = void do          
         setFillStyle "black" ctx
         fillRect ctx { x: 0.0, y: 0.0, w: 1.0, h: 1.0 }
 
         setFillStyle "white" ctx
         for_ stars \star ->
-          fillPath ctx $
+          fillPath ctx $ do
             arc ctx { x: star.x
                     , y: star.y
                     , r: 0.001
                     , start: 0.0
                     , end: Math.pi * 2.0
                     }
+            closePath ctx
 
-        setFillStyle "white" ctx
-        fillPath ctx $ do
-          moveTo ctx state.pos.x state.pos.y
-          lineTo ctx (state.pos.x - 0.01) (state.pos.y + 0.005)
-          lineTo ctx (state.pos.x - 0.01) (state.pos.y - 0.005)
-          closePath ctx
-          
-        setFillStyle "goldenrod" ctx
-        for_ mines \mine ->
-          fillPath ctx $
-            arc ctx { x: mine.pos.x
-                    , y: mine.pos.y
-                    , r: mine.radius
-                    , start: 0.0
-                    , end: Math.pi * 2.0
-                    }    
+        setStrokeStyle "lightblue" ctx
+        for_ state.paths \path -> 
+          case path of
+            Cons hd tl -> do
+              beginPath ctx
+              moveTo ctx hd.x hd.y
+              for_ tl \p -> lineTo ctx p.x p.y
+              stroke ctx
  
-  runSignal (render <$> state <*> mines) 
+  runSignal (render <$> state) 
 
