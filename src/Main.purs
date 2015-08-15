@@ -2,6 +2,7 @@ module Main where
 
 import Prelude
 
+import Control.Bind (join)
 import Control.Monad.Eff
 import Control.Monad.Eff.Random
 
@@ -71,7 +72,13 @@ main = do
   Just canvas <- getCanvasElementById "canvas"
   ctx <- getContext2D canvas
   
-  stars <- for (1 .. 80) \_ -> { x: _, y: _ } <$> randomRange 0.1 0.9 <*> randomRange 0.1 0.9
+  stars <- join <$> for (0 .. 8) \x -> 
+                      for (2 .. 6) \y -> do
+                        dx <- randomRange (-0.025) 0.025
+                        dy <- randomRange (-0.025) 0.025
+                        return { x: 0.15 + toNumber x * 0.7 / 8.0 + dx
+                               , y: 0.15 + toNumber y * 0.7 / 8.0 + dy
+                               }
   
   frame <- animationFrame
   space <- keyPressed 32  
@@ -98,8 +105,8 @@ main = do
 
       testCollision :: List (List Point) -> Boolean
       testCollision (Cons (Cons p1 (Cons p2 _)) pss) 
-        | p1.y <= 0.05 = true
-        | p1.y >= 0.95 = true
+        | p1.y <= 0.25 = true
+        | p1.y >= 0.75 = true
         | any ((< 0.000225) <<< dist2 p1) stars = true
         | any (testLineSegments p1 p2) pss = true
         | otherwise = false
@@ -139,8 +146,8 @@ main = do
         fillRect ctx { x: 0.0, y: 0.0, w: 1.0, h: 1.0 }
             
         setStrokeStyle "lightgreen" ctx
-        strokeRect ctx { x: 0.05, y: 0.05, w: 0.9, h: 0.9 }
-        strokeRect ctx { x: 0.045, y: 0.045, w: 0.91, h: 0.91 }
+        strokeRect ctx { x: 0.05, y: 0.25, w: 0.9, h: 0.5 }
+        strokeRect ctx { x: 0.045, y: 0.245, w: 0.91, h: 0.51 }
         
         setFillStyle "#222" ctx
         setStrokeStyle "lightgreen" ctx
