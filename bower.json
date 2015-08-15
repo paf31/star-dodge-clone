@@ -1,0 +1,19 @@
+{
+  "name": "purescript-line-game",
+  "version": "1.0.0",
+  "moduleType": [
+    "node"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-console": "^0.1.0",
+    "purescript-lists": "~0.7.1",
+    "purescript-math": "~0.2.0",
+    "purescript-random": "~0.2.2"
+  }
+}
