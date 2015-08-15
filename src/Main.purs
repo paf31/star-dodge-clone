@@ -10,9 +10,9 @@ import Data.Maybe
 import Data.Tuple (Tuple(..))
 import Data.Either (Either(..))
 import Data.Functor (($>))
-import Data.Foldable (for_)
+import Data.Foldable (for_, any)
 import Data.Traversable (for)
-import Data.List (List(..), (..), singleton, toList)
+import Data.List (List(..), (..), singleton, toList, take)
 
 import Signal
 import Signal.DOM
@@ -34,7 +34,7 @@ type Mine =
   }
 
 type Inputs = 
-  { direction :: Direction
+  { space :: Boolean
   }
 
 type Point = 
@@ -42,13 +42,14 @@ type Point =
   , y :: Number
   }
   
-type GameState = 
-  { paths :: List (List Point)
-  , direction :: Direction
-  }
+data GameState 
+  = Playing { paths :: List (List Point)
+            , direction :: Direction
+            }
+  | GameOver (List (List Point))
 
-initialState :: GameState
-initialState = 
+newGame :: GameState
+newGame = Playing
   { paths: singleton (toList [p, p])
   , direction: Down
   }
@@ -56,32 +57,15 @@ initialState =
   p = { x: 0.0
       , y: 0.5
       }
-
-clamp :: Number -> Number
-clamp x
-  | x < 0.0 = clamp (x + 1.0)
-  | x > 1.0 = clamp (x - 1.0)
-  | otherwise = x
-
-update :: Inputs -> GameState -> GameState
-update inputs state@{ paths: Cons (Cons hd tl) paths }
-  | state.direction == inputs.direction 
-    = case move hd inputs.direction of
-        Right p -> { paths: Cons (Cons p tl) paths, direction: inputs.direction }
-        Left (Tuple old new) -> { paths: Cons (toList [new, new]) (Cons (Cons old tl) paths), direction: inputs.direction }
-  | otherwise
-    = { paths: Cons (Cons hd (Cons hd tl)) paths, direction: inputs.direction }
-
-move :: Point -> Direction -> Either (Tuple Point Point) Point
-move pt dir 
-  | pt.x < 0.998
-    = let dy Up   = 1.0
-          dy Down = -1.0
-      in Right { x: pt.x + 0.002
-               , y: clamp (pt.y + dy dir * 0.002)
-               }
-  | otherwise
-    = Left (Tuple { x: 1.0, y: pt.y } { x: 0.0, y: pt.y })
+  
+dist2 :: Point -> Point -> Number
+dist2 p1 p2 = len2 (p2 `subtract` p1)  
+  
+len2 :: Point -> Number
+len2 p = p.x * p.x + p.y * p.y
+  
+subtract :: Point -> Point -> Point
+subtract p1 p2 = { x: p1.x - p2.x, y: p1.y - p2.y }
   
 main = do
   Just canvas <- getCanvasElementById "canvas"
@@ -95,39 +79,110 @@ main = do
   scale { scaleX: 600.0, scaleY: 600.0 } ctx
   setLineWidth 0.001 ctx
 
-  let direction :: Signal Direction
-      direction = map (\b -> if b then Up else Down) space
-  
-      inputs :: Signal Inputs
-      inputs = { direction: _ } <$> direction
+  let inputs :: Signal Inputs
+      inputs = { space: _ } <$> space
   
       state :: Signal GameState
-      state = foldp update initialState (sampleOn frame inputs)
+      state = foldp update (GameOver Nil) (sampleOn frame inputs)
+        where
+        update :: Inputs -> GameState -> GameState
+        update inputs (Playing state@{ paths: Cons (Cons hd tl) paths })
+          | testCollision state.paths = GameOver state.paths
+          | (state.direction == Up) == inputs.space 
+            = case move hd inputs.space of
+                Right p -> playing (Cons (Cons p tl) paths) inputs
+                Left (Tuple old new) -> playing (take 3 (Cons (toList [new, new]) (Cons (Cons old tl) paths))) inputs
+          | otherwise
+            = playing (Cons (Cons hd (Cons hd tl)) paths) inputs
+        update inputs (GameOver paths) = if inputs.space then newGame else GameOver paths
 
-      render :: GameState -> Eff _ Unit
-      render state = void do          
+      testCollision :: List (List Point) -> Boolean
+      testCollision (Cons (Cons p1 (Cons p2 _)) pss) 
+        | p1.y <= 0.1 = true
+        | p1.y >= 0.9 = true
+        | any ((< 0.000225) <<< dist2 p1) stars = true
+        | any (testLineSegments p1 p2) pss = true
+        | otherwise = false
+
+      testLineSegments :: Point -> Point -> List Point -> Boolean
+      testLineSegments q1 q2 = go
+        where 
+        go (Cons p1 ps@(Cons p2 _))
+          | linesIntersect p1 p2 q1 q2 = true
+          | otherwise = go ps
+        go _ = false
+
+      linesIntersect :: Point -> Point -> Point -> Point -> Boolean
+      linesIntersect p1 p2 q1 q2 = 
+        let d1  = (q1.x - p1.x) * (p2.x - p1.x) + (q1.y - p1.y) * (p2.y - p1.y)
+            d2  = (p1.x - q1.x) * (q2.x - q1.x) + (p1.y - q1.y) * (q2.y - q1.y)
+            lp2 = (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y)
+            lq2 = (q1.x - q2.x) * (q1.x - q2.x) + (q1.y - q2.y) * (q1.y - q2.y)
+        in d1 > 0.0 && d1 < lp2 && d2 > 0.0 && d2 < lq2
+
+      playing :: List (List Point) -> Inputs -> GameState
+      playing paths inputs = Playing { paths: paths, direction: if inputs.space then Up else Down }
+
+      move :: Point -> Boolean -> Either (Tuple Point Point) Point
+      move pt space 
+        | pt.x < 0.998
+          = let dy = if space then 1.0 else -1.0
+            in Right { x: pt.x + 0.002
+                     , y: pt.y + dy * 0.002
+                     }
+        | otherwise
+          = Left (Tuple { x: 1.0, y: pt.y } { x: 0.0, y: pt.y })
+
+      background :: Eff _ Unit
+      background = void do
         setFillStyle "black" ctx
         fillRect ctx { x: 0.0, y: 0.0, w: 1.0, h: 1.0 }
 
-        setFillStyle "white" ctx
-        for_ stars \star ->
-          fillPath ctx $ do
-            arc ctx { x: star.x
-                    , y: star.y
-                    , r: 0.001
-                    , start: 0.0
-                    , end: Math.pi * 2.0
-                    }
-            closePath ctx
-
+        setFillStyle "#222" ctx
+        setStrokeStyle "white" ctx
+        for_ stars \star -> do
+          let path = do arc ctx { x: star.x
+                                , y: star.y
+                                , r: 0.015
+                                , start: 0.0
+                                , end: Math.pi * 2.0
+                                }
+                        closePath ctx
+          fillPath ctx path
+          strokePath ctx path
+            
         setStrokeStyle "lightblue" ctx
-        for_ state.paths \path -> 
+        
+        beginPath ctx
+        moveTo ctx 0.0 0.1
+        lineTo ctx 1.0 0.1
+        stroke ctx
+        
+        beginPath ctx
+        moveTo ctx 0.0 0.9
+        lineTo ctx 1.0 0.9
+        stroke ctx
+
+      renderPaths :: List (List Point) -> Eff _ Unit
+      renderPaths paths = do
+        setStrokeStyle "lightblue" ctx
+        for_ paths \path -> 
           case path of
             Cons hd tl -> do
               beginPath ctx
               moveTo ctx hd.x hd.y
               for_ tl \p -> lineTo ctx p.x p.y
               stroke ctx
+
+      render :: GameState -> Eff _ Unit
+      render (GameOver paths) = void do
+        background
+        
+        renderPaths paths
+      render (Playing state) = void do          
+        background
+
+        renderPaths state.paths
  
   runSignal (render <$> state) 
 
