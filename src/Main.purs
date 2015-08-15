@@ -76,7 +76,7 @@ main = do
   frame <- animationFrame
   space <- keyPressed 32  
 
-  scale { scaleX: 600.0, scaleY: 600.0 } ctx
+  scale { scaleX: 800.0, scaleY: 800.0 } ctx
   setLineWidth 0.001 ctx
 
   let inputs :: Signal Inputs
@@ -137,6 +137,18 @@ main = do
       background = void do
         setFillStyle "black" ctx
         fillRect ctx { x: 0.0, y: 0.0, w: 1.0, h: 1.0 }
+            
+        setStrokeStyle "lightblue" ctx
+        
+        beginPath ctx
+        moveTo ctx 0.0 0.1
+        lineTo ctx 1.0 0.1
+        stroke ctx
+        
+        beginPath ctx
+        moveTo ctx 0.0 0.9
+        lineTo ctx 1.0 0.9
+        stroke ctx
 
         setFillStyle "#222" ctx
         setStrokeStyle "white" ctx
@@ -150,18 +162,6 @@ main = do
                         closePath ctx
           fillPath ctx path
           strokePath ctx path
-            
-        setStrokeStyle "lightblue" ctx
-        
-        beginPath ctx
-        moveTo ctx 0.0 0.1
-        lineTo ctx 1.0 0.1
-        stroke ctx
-        
-        beginPath ctx
-        moveTo ctx 0.0 0.9
-        lineTo ctx 1.0 0.9
-        stroke ctx
 
       renderPaths :: List (List Point) -> Eff _ Unit
       renderPaths paths = do

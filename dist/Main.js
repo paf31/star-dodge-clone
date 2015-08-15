@@ -1316,8 +1316,8 @@ var PS = { };
           var _5 = Signal_DOM.animationFrame();
           var _4 = Signal_DOM.keyPressed(32)();
           Graphics_Canvas.scale({
-              scaleX: 600.0, 
-              scaleY: 600.0
+              scaleX: 800.0, 
+              scaleY: 800.0
           })(_7)();
           Graphics_Canvas.setLineWidth(1.0e-3)(_7)();
           var renderPaths = function (paths) {
@@ -1487,9 +1487,18 @@ var PS = { };
                   w: 1.0, 
                   h: 1.0
               })();
+              Graphics_Canvas.setStrokeStyle("lightblue")(_7)();
+              Graphics_Canvas.beginPath(_7)();
+              Graphics_Canvas.moveTo(_7)(0.0)(0.1)();
+              Graphics_Canvas.lineTo(_7)(1.0)(0.1)();
+              Graphics_Canvas.stroke(_7)();
+              Graphics_Canvas.beginPath(_7)();
+              Graphics_Canvas.moveTo(_7)(0.0)(0.9)();
+              Graphics_Canvas.lineTo(_7)(1.0)(0.9)();
+              Graphics_Canvas.stroke(_7)();
               Graphics_Canvas.setFillStyle("#222")(_7)();
               Graphics_Canvas.setStrokeStyle("white")(_7)();
-              Data_Foldable.for_(Control_Monad_Eff.applicativeEff)(Data_List.foldableList)(_6)(function (star) {
+              return Data_Foldable.for_(Control_Monad_Eff.applicativeEff)(Data_List.foldableList)(_6)(function (star) {
                   var path = function __do() {
                       Graphics_Canvas.arc(_7)({
                           x: star.x, 
@@ -1505,15 +1514,6 @@ var PS = { };
                       return Graphics_Canvas.strokePath(_7)(path)();
                   };
               })();
-              Graphics_Canvas.setStrokeStyle("lightblue")(_7)();
-              Graphics_Canvas.beginPath(_7)();
-              Graphics_Canvas.moveTo(_7)(0.0)(0.1)();
-              Graphics_Canvas.lineTo(_7)(1.0)(0.1)();
-              Graphics_Canvas.stroke(_7)();
-              Graphics_Canvas.beginPath(_7)();
-              Graphics_Canvas.moveTo(_7)(0.0)(0.9)();
-              Graphics_Canvas.lineTo(_7)(1.0)(0.9)();
-              return Graphics_Canvas.stroke(_7)();
           });
           var render = function (_13) {
               if (_13 instanceof GameOver) {
