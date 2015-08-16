@@ -198,6 +198,7 @@ main = do
             moveTo ctx hd.x hd.y
             for_ tl \p -> lineTo ctx p.x p.y
             stroke ctx
+          _ -> return unit
 
       render :: GameState -> Eff _ Unit
       render (Waiting w) = void do
