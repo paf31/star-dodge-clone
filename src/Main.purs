@@ -3,6 +3,8 @@ module Main where
 import Prelude
 
 import Control.Bind (join)
+import Control.MonadPlus (guard)
+
 import Control.Monad.Eff
 import Control.Monad.Eff.Random
 import Control.Monad.Eff.Ref
@@ -82,6 +84,10 @@ subtract p1 p2 = { x: p1.x - p2.x, y: p1.y - p2.y }
 decay :: Number -> Number -> Int -> Number
 decay at0 at7 n = (1.0 - Math.exp (- (toNumber n) / 2.5)) * (at7 - at0) + at0
   
+clamp :: forall a. (Ord a) => a -> a -> a
+clamp a max | a > max = max
+            | otherwise = a
+  
 unsafeLevel :: Int -> Level
 unsafeLevel level = unsafePure do
   let door  = decay 0.14    0.04    level
@@ -152,14 +158,14 @@ main = do
       playing path levels inputs = Playing { path: path, level: levels, direction: if inputs.space then Up else Down }
           
       move :: Level -> Point -> Boolean -> Milliseconds -> Maybe Point
-      move level pt space (Milliseconds elapsed)
-        | pt.x >= 0.95 - level.speed && pt.y >= 0.5 - level.door / 2.0 && pt.y <= 0.5 + level.door / 2.0
-          = Nothing
-        | otherwise
-          = let dy = if space then 1.0 else -1.0
-            in Just { x: pt.x + level.speed * elapsed
-                    , y: pt.y + dy * level.speed * elapsed
-                    }
+      move level pt space (Milliseconds elapsed) = do
+        let dt  = clamp elapsed 50.0 -- Cap the equivalent of at 20fps
+            dy  = if space then 1.0 else -1.0
+            new = { x: pt.x + level.speed * dt
+                  , y: pt.y + dy * level.speed * dt
+                  }
+        guard (new.x < 0.95 || new.y < 0.5 - level.door / 2.0 || new.y > 0.5 + level.door / 2.0)
+        return new
 
       background :: Lazy.List Level -> Eff _ Unit
       background levels = void do
