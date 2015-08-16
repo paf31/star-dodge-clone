@@ -1624,7 +1624,7 @@ var PS = { };
                           return Graphics_Canvas.stroke(_6)();
                       })();
                   };
-                  throw new Error("Failed pattern match at Main line 202, column 7 - line 203, column 7: " + [ path.constructor.name ]);
+                  return Prelude["return"](Control_Monad_Eff.applicativeEff)(Prelude.unit)();
               };
           };
           var inputs = Prelude["<$>"](Signal.functorSignal)(function (_0) {
@@ -1676,7 +1676,7 @@ var PS = { };
                                   if (!inputs_1.space) {
                                       return Down.value;
                                   };
-                                  throw new Error("Failed pattern match at Main line 101, column 1 - line 210, column 30: " + [ inputs_1.space.constructor.name ]);
+                                  throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ inputs_1.space.constructor.name ]);
                               })()
                           });
                       };
@@ -1714,7 +1714,7 @@ var PS = { };
                                   y: pt.y + dy * level.speed
                               });
                           };
-                          throw new Error("Failed pattern match at Main line 101, column 1 - line 210, column 30: " + [ level.constructor.name, pt.constructor.name, space_1.constructor.name ]);
+                          throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ level.constructor.name, pt.constructor.name, space_1.constructor.name ]);
                       };
                   };
               };
@@ -1735,7 +1735,7 @@ var PS = { };
                               if (_42 instanceof Data_Maybe.Nothing) {
                                   return initialState(Data_Maybe_Unsafe.fromJust(Data_List_Lazy.tail(_12.value0.level)));
                               };
-                              throw new Error("Failed pattern match at Main line 101, column 1 - line 210, column 30: " + [ _42.constructor.name ]);
+                              throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ _42.constructor.name ]);
                           };
                           if (Prelude.otherwise) {
                               return playing(new Data_List.Cons(_12.value0.path.value0, new Data_List.Cons(_12.value0.path.value0, _12.value0.path.value1)))(_12.value0.level)(inputs_1);
@@ -1748,9 +1748,9 @@ var PS = { };
                           if (!inputs_1.space) {
                               return _12;
                           };
-                          throw new Error("Failed pattern match at Main line 101, column 1 - line 210, column 30: " + [ inputs_1.space.constructor.name ]);
+                          throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ inputs_1.space.constructor.name ]);
                       };
-                      throw new Error("Failed pattern match at Main line 101, column 1 - line 210, column 30: " + [ inputs_1.constructor.name, _12.constructor.name ]);
+                      throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ inputs_1.constructor.name, _12.constructor.name ]);
                   };
               };
               return Signal.foldp(update)(initialState(levels))(Signal.sampleOn(_5)(inputs));
@@ -1826,11 +1826,11 @@ var PS = { };
                       return renderPath(_11.value0.path)();
                   });
               };
-              throw new Error("Failed pattern match at Main line 101, column 1 - line 210, column 30: " + [ _11.constructor.name ]);
+              throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ _11.constructor.name ]);
           };
           return Signal.runSignal(Prelude["<$>"](Signal.functorSignal)(render)(state))();
       };
-      throw new Error("Failed pattern match at Main line 101, column 1 - line 210, column 30: " + [ _7.constructor.name ]);
+      throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ _7.constructor.name ]);
   };
   exports["Playing"] = Playing;
   exports["Waiting"] = Waiting;
