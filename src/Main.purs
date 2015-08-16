@@ -171,7 +171,7 @@ main = do
       background levels = void do
         let level = fromJust (Lazy.head levels)
           
-        setFillStyle "black" ctx
+        setFillStyle "#1B1C1B" ctx
         fillRect ctx { x: 0.0, y: 0.0, w: 1.0, h: 1.0 }
             
         setStrokeStyle "lightgreen" ctx

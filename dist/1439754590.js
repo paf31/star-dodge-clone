@@ -2030,7 +2030,7 @@ var PS = { };
               return Prelude["void"](Control_Monad_Eff.functorEff)((function () {
                   var level = Data_Maybe_Unsafe.fromJust(Data_List_Lazy.head(levels_1));
                   return function __do() {
-                      Graphics_Canvas.setFillStyle("black")(_10)();
+                      Graphics_Canvas.setFillStyle("#1B1C1B")(_10)();
                       Graphics_Canvas.fillRect(_10)({
                           x: 0.0, 
                           y: 0.0, 
