@@ -18,3 +18,18 @@ exports.onSpaceBar = function(f) {
         }, false);
     };
 };
+
+exports.onSpaceBarOnce = function(f) {
+    
+    return function() {
+        
+        var handler = function(e) {
+            if (e.keyCode === 32) {
+                f();
+            }
+            window.removeEventListener("keydown", handler);
+        };
+        
+        window.addEventListener("keydown", handler);
+    };
+};

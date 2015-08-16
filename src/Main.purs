@@ -65,6 +65,8 @@ data GameState
             }
 
 foreign import onSpaceBar :: forall eff. (Boolean -> Eff (dom :: DOM | eff) Unit) -> Eff (dom :: DOM | eff) Unit
+
+foreign import onSpaceBarOnce :: forall eff. Eff (dom :: DOM | eff) Unit -> Eff (dom :: DOM | eff) Unit
   
 dist2 :: forall r1 r2. { x :: Number, y :: Number | r1 } -> { x :: Number, y :: Number | r2 } -> Number
 dist2 p1 p2 = len2 (p2 `subtract` p1)  
@@ -222,7 +224,7 @@ main = do
               Just newState -> do
                 render newState 
                 go newState
-              Nothing -> go state 
+              Nothing -> onSpaceBarOnce (go state)
  
   loop (initialState levels)
 
