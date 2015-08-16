@@ -5,6 +5,7 @@ import Prelude
 import Control.Bind (join)
 import Control.Monad.Eff
 import Control.Monad.Eff.Random
+import Control.Monad.Eff.Ref
 
 import Data.Int (toNumber)
 import Data.Maybe
@@ -17,9 +18,8 @@ import Data.Traversable (for)
 import Data.List (List(..), (..), toList)
 import qualified Data.List.Lazy as Lazy
 
-import Signal
-import Signal.DOM
-import Signal.Time
+import DOM
+import DOM.RequestAnimationFrame (requestAnimationFrame)
 
 import Graphics.Canvas
 
@@ -65,6 +65,8 @@ data GameState
   | Waiting { path :: List Point
             , nextLevel :: Lazy.List Level
             }
+
+foreign import onSpaceBar :: forall eff. (Boolean -> Eff (dom :: DOM | eff) Unit) -> Eff (dom :: DOM | eff) Unit
   
 dist2 :: forall r1 r2. { x :: Number, y :: Number | r1 } -> { x :: Number, y :: Number | r2 } -> Number
 dist2 p1 p2 = len2 (p2 `subtract` p1)  
@@ -102,65 +104,60 @@ main = do
   Just canvas <- getCanvasElementById "canvas"
   ctx <- getContext2D canvas
   
-  frame <- animationFrame
-  space <- keyPressed 32  
+  inputsRef <- newRef { space: false }
+  
+  onSpaceBar (\b -> modifyRef inputsRef (_ { space = b }))
 
   translate { translateX: 0.0, translateY: -170.0 } ctx
   scale { scaleX: 800.0, scaleY: 800.0 } ctx
   setLineWidth 0.001 ctx
 
-  let inputs :: Signal Inputs
-      inputs = { space: _ } <$> space
-  
-      initialState :: Lazy.List Level -> GameState
+  let initialState :: Lazy.List Level -> GameState
       initialState levels = Waiting { path: Nil, nextLevel: levels }
   
-      state :: Signal GameState
-      state = foldp update (initialState levels) (sampleOn frame inputs)
+      update :: Inputs -> GameState -> GameState
+      update inputs (Playing state@{ path: Cons hd tl })
+        | testCollision (fromJust (Lazy.head state.level)) state.path 
+          = Waiting { path: state.path, nextLevel: state.level }
+        | (state.direction == Up) == inputs.space 
+          = case move (fromJust (Lazy.head state.level)) hd inputs.space of
+              Just p -> playing (Cons p tl) state.level inputs
+              Nothing -> initialState (fromJust (Lazy.tail state.level))
+        | otherwise
+          = playing (Cons hd (Cons hd tl)) state.level inputs
+      update inputs w@(Waiting { nextLevel: nextLevel }) = if inputs.space then newGame nextLevel else w
+
+      testCollision :: Level -> List Point -> Boolean
+      testCollision level (Cons p1 (Cons p2 _))
+        | p1.y <= 0.25 = true
+        | p1.y >= 0.75 = true
+        | p1.x > 0.95 && (p1.y < 0.5 - level.door / 2.0 || p1.y > 0.5 + level.door / 2.0) = true
+        | any (\star -> dist2 p1 star < star.r * star.r) level.stars = true
+        | otherwise = false
+          
+      newGame :: Lazy.List Level -> GameState
+      newGame levels = Playing
+        { path: toList [p, p]
+        , direction: Down
+        , level: levels
+        }
         where
-        update :: Inputs -> GameState -> GameState
-        update inputs (Playing state@{ path: Cons hd tl })
-          | testCollision (fromJust (Lazy.head state.level)) state.path 
-            = Waiting { path: state.path, nextLevel: state.level }
-          | (state.direction == Up) == inputs.space 
-            = case move (fromJust (Lazy.head state.level)) hd inputs.space of
-                Just p -> playing (Cons p tl) state.level inputs
-                Nothing -> initialState (fromJust (Lazy.tail state.level))
-          | otherwise
-            = playing (Cons hd (Cons hd tl)) state.level inputs
-        update inputs w@(Waiting { nextLevel: nextLevel }) = if inputs.space then newGame nextLevel else w
-
-        testCollision :: Level -> List Point -> Boolean
-        testCollision level (Cons p1 (Cons p2 _))
-          | p1.y <= 0.25 = true
-          | p1.y >= 0.75 = true
-          | p1.x > 0.95 && (p1.y < 0.5 - level.door / 2.0 || p1.y > 0.5 + level.door / 2.0) = true
-          | any (\star -> dist2 p1 star < star.r * star.r) level.stars = true
-          | otherwise = false
-
-        newGame :: Lazy.List Level -> GameState
-        newGame levels = Playing
-          { path: toList [p, p]
-          , direction: Down
-          , level: levels
-          }
-          where
-          p = { x: 0.05
-              , y: 0.5
-              }
-
-        playing :: List Point -> Lazy.List Level -> Inputs -> GameState
-        playing path levels inputs = Playing { path: path, level: levels, direction: if inputs.space then Up else Down }
-
-        move :: Level -> Point -> Boolean -> Maybe Point
-        move level pt space 
-          | pt.x >= 0.95 - level.speed && pt.y >= 0.5 - level.door / 2.0 && pt.y <= 0.5 + level.door / 2.0
-            = Nothing
-          | otherwise
-            = let dy = if space then 1.0 else -1.0
-              in Just { x: pt.x + level.speed
-                      , y: pt.y + dy * level.speed
-                      }
+        p = { x: 0.05
+            , y: 0.5
+            }
+          
+      playing :: List Point -> Lazy.List Level -> Inputs -> GameState
+      playing path levels inputs = Playing { path: path, level: levels, direction: if inputs.space then Up else Down }
+          
+      move :: Level -> Point -> Boolean -> Maybe Point
+      move level pt space 
+        | pt.x >= 0.95 - level.speed && pt.y >= 0.5 - level.door / 2.0 && pt.y <= 0.5 + level.door / 2.0
+          = Nothing
+        | otherwise
+          = let dy = if space then 1.0 else -1.0
+            in Just { x: pt.x + level.speed
+                    , y: pt.y + dy * level.speed
+                    }
 
       background :: Lazy.List Level -> Eff _ Unit
       background levels = void do
@@ -209,5 +206,11 @@ main = do
         background state.level
         renderPath state.path
  
-  runSignal (render <$> state) 
+      loop :: GameState -> Eff _ Unit
+      loop state = do
+        render state
+        inputs <- readRef inputsRef
+        requestAnimationFrame (loop (update inputs state))
+ 
+  loop (initialState levels)
 
