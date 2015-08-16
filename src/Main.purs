@@ -17,6 +17,8 @@ import Data.Foldable (for_, any)
 import Data.Traversable (for)
 import Data.List (List(..), (..), toList)
 import qualified Data.List.Lazy as Lazy
+import Data.Date (nowEpochMilliseconds)
+import Data.Time (Milliseconds(..))
 
 import DOM
 import DOM.RequestAnimationFrame (requestAnimationFrame)
@@ -82,9 +84,9 @@ decay at0 at7 n = (1.0 - Math.exp (- (toNumber n) / 2.5)) * (at7 - at0) + at0
   
 unsafeLevel :: Int -> Level
 unsafeLevel level = unsafePure do
-  let door  = decay 0.14   0.04   level
-      speed = decay 0.0018 0.0025 level
-      r     = decay 0.005  0.02   level
+  let door  = decay 0.14    0.04    level
+      speed = decay 0.00009 0.00012 level
+      r     = decay 0.005   0.02    level
   stars <- for (Tuple <$> 0 .. 8 <*> 2 .. 6) \(Tuple x y) -> do
     dx <- randomRange (-0.025) 0.025
     dy <- randomRange (-0.025) 0.025
@@ -115,17 +117,17 @@ main = do
   let initialState :: Lazy.List Level -> GameState
       initialState levels = Waiting { path: Nil, nextLevel: levels }
   
-      update :: Inputs -> GameState -> GameState
-      update inputs (Playing state@{ path: Cons hd tl })
+      update :: Inputs -> Milliseconds -> GameState -> GameState
+      update inputs elapsed (Playing state@{ path: Cons hd tl })
         | testCollision (fromJust (Lazy.head state.level)) state.path 
           = Waiting { path: state.path, nextLevel: state.level }
         | (state.direction == Up) == inputs.space 
-          = case move (fromJust (Lazy.head state.level)) hd inputs.space of
+          = case move (fromJust (Lazy.head state.level)) hd inputs.space elapsed of
               Just p -> playing (Cons p tl) state.level inputs
               Nothing -> initialState (fromJust (Lazy.tail state.level))
         | otherwise
           = playing (Cons hd (Cons hd tl)) state.level inputs
-      update inputs w@(Waiting { nextLevel: nextLevel }) = if inputs.space then newGame nextLevel else w
+      update inputs _ w@(Waiting { nextLevel: nextLevel }) = if inputs.space then newGame nextLevel else w
 
       testCollision :: Level -> List Point -> Boolean
       testCollision level (Cons p1 (Cons p2 _))
@@ -149,14 +151,14 @@ main = do
       playing :: List Point -> Lazy.List Level -> Inputs -> GameState
       playing path levels inputs = Playing { path: path, level: levels, direction: if inputs.space then Up else Down }
           
-      move :: Level -> Point -> Boolean -> Maybe Point
-      move level pt space 
+      move :: Level -> Point -> Boolean -> Milliseconds -> Maybe Point
+      move level pt space (Milliseconds elapsed)
         | pt.x >= 0.95 - level.speed && pt.y >= 0.5 - level.door / 2.0 && pt.y <= 0.5 + level.door / 2.0
           = Nothing
         | otherwise
           = let dy = if space then 1.0 else -1.0
-            in Just { x: pt.x + level.speed
-                    , y: pt.y + dy * level.speed
+            in Just { x: pt.x + level.speed * elapsed
+                    , y: pt.y + dy * level.speed * elapsed
                     }
 
       background :: Lazy.List Level -> Eff _ Unit
@@ -208,9 +210,12 @@ main = do
  
       loop :: GameState -> Eff _ Unit
       loop state = do
+        t0 <- nowEpochMilliseconds
         render state
         inputs <- readRef inputsRef
-        requestAnimationFrame (loop (update inputs state))
+        requestAnimationFrame do
+          t1 <- nowEpochMilliseconds
+          loop (update inputs (t1 - t0) state)
  
   loop (initialState levels)
 
