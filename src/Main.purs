@@ -14,7 +14,8 @@ import Data.Either (Either(..))
 import Data.Functor (($>))
 import Data.Foldable (for_, any)
 import Data.Traversable (for)
-import Data.List (List(..), (..), (!!),  singleton, toList, take)
+import Data.List (List(..), (..), toList)
+import qualified Data.List.Lazy as Lazy
 
 import Signal
 import Signal.DOM
@@ -50,13 +51,19 @@ type Star =
   , r :: Number
   }
   
+type Level = 
+  { stars :: List Star
+  , door  :: Number
+  , speed :: Number
+  }
+  
 data GameState 
   = Playing { path :: List Point
             , direction :: Direction
-            , level :: Int
+            , level :: Lazy.List Level
             }
   | Waiting { path :: List Point
-            , nextLevel :: Int
+            , nextLevel :: Lazy.List Level
             }
   
 dist2 :: forall r1 r2. { x :: Number, y :: Number | r1 } -> { x :: Number, y :: Number | r2 } -> Number
@@ -68,18 +75,32 @@ len2 p = p.x * p.x + p.y * p.y
 subtract :: forall r1 r2. { x :: Number, y :: Number | r1 } -> { x :: Number, y :: Number | r2 } -> Point
 subtract p1 p2 = { x: p1.x - p2.x, y: p1.y - p2.y }
   
+decay :: Number -> Number -> Int -> Number
+decay at0 at7 n = (1.0 - Math.exp (- (toNumber n) / 2.5)) * (at7 - at0) + at0
+  
+unsafeLevel :: Int -> Level
+unsafeLevel level = unsafePure do
+  let door  = decay 0.14   0.04   level
+      speed = decay 0.0018 0.0025 level
+      r     = decay 0.005  0.02   level
+  stars <- for (Tuple <$> 0 .. 8 <*> 2 .. 6) \(Tuple x y) -> do
+    dx <- randomRange (-0.025) 0.025
+    dy <- randomRange (-0.025) 0.025
+    return { x: 0.15 + toNumber x * 0.7 / 8.0 + dx
+           , y: 0.15 + toNumber y * 0.7 / 8.0 + dy
+           , r: r
+           }
+  return { stars: stars, door: door, speed: speed }
+  where
+  unsafePure :: forall eff a. Eff eff a -> a
+  unsafePure = runPure <<< Control.Monad.Eff.Unsafe.unsafeInterleaveEff
+  
+levels :: Lazy.List Level
+levels = unsafeLevel <$> Lazy.iterate (1 +) 0
+  
 main = do
   Just canvas <- getCanvasElementById "canvas"
   ctx <- getContext2D canvas
-  
-  levels <- for (0 .. 19) \level -> do
-              for (Tuple <$> 0 .. 8 <*> 2 .. 6) \(Tuple x y) -> do
-                dx <- randomRange (-0.025) 0.025
-                dy <- randomRange (-0.025) 0.025
-                return { x: 0.15 + toNumber x * 0.7 / 8.0 + dx
-                       , y: 0.15 + toNumber y * 0.7 / 8.0 + dy
-                       , r: 0.015
-                       }
   
   frame <- animationFrame
   space <- keyPressed 32  
@@ -90,57 +111,60 @@ main = do
   let inputs :: Signal Inputs
       inputs = { space: _ } <$> space
   
-      initialState :: Int -> GameState
-      initialState level = Waiting { path: Nil, nextLevel: level }
+      initialState :: Lazy.List Level -> GameState
+      initialState levels = Waiting { path: Nil, nextLevel: levels }
   
       state :: Signal GameState
-      state = foldp update (initialState 0) (sampleOn frame inputs)
+      state = foldp update (initialState levels) (sampleOn frame inputs)
         where
         update :: Inputs -> GameState -> GameState
         update inputs (Playing state@{ path: Cons hd tl })
-          | testCollision (fromJust (levels !! state.level)) state.path = Waiting { path: state.path, nextLevel: state.level }
+          | testCollision (fromJust (Lazy.head state.level)) state.path 
+            = Waiting { path: state.path, nextLevel: state.level }
           | (state.direction == Up) == inputs.space 
-            = case move hd inputs.space of
+            = case move (fromJust (Lazy.head state.level)) hd inputs.space of
                 Just p -> playing (Cons p tl) state.level inputs
-                Nothing -> initialState ((state.level + 1) `mod` 20)
+                Nothing -> initialState (fromJust (Lazy.tail state.level))
           | otherwise
             = playing (Cons hd (Cons hd tl)) state.level inputs
         update inputs w@(Waiting { nextLevel: nextLevel }) = if inputs.space then newGame nextLevel else w
 
-        testCollision :: List Star -> List Point -> Boolean
-        testCollision stars (Cons p1 (Cons p2 _))
+        testCollision :: Level -> List Point -> Boolean
+        testCollision level (Cons p1 (Cons p2 _))
           | p1.y <= 0.25 = true
           | p1.y >= 0.75 = true
-          | p1.x > 0.95 && (p1.y < 0.45 || p1.y > 0.55) = true
-          | any (\star -> dist2 p1 star < star.r * star.r) stars = true
+          | p1.x > 0.95 && (p1.y < 0.5 - level.door / 2.0 || p1.y > 0.5 + level.door / 2.0) = true
+          | any (\star -> dist2 p1 star < star.r * star.r) level.stars = true
           | otherwise = false
 
-        newGame :: Int -> GameState
-        newGame level = Playing
+        newGame :: Lazy.List Level -> GameState
+        newGame levels = Playing
           { path: toList [p, p]
           , direction: Down
-          , level: level
+          , level: levels
           }
           where
           p = { x: 0.05
               , y: 0.5
               }
 
-        playing :: List Point -> Int -> Inputs -> GameState
-        playing path level inputs = Playing { path: path, level: level, direction: if inputs.space then Up else Down }
+        playing :: List Point -> Lazy.List Level -> Inputs -> GameState
+        playing path levels inputs = Playing { path: path, level: levels, direction: if inputs.space then Up else Down }
 
-        move :: Point -> Boolean -> Maybe Point
-        move pt space 
-          | pt.x >= 0.948 && pt.y >= 0.45 && pt.y <= 0.55
+        move :: Level -> Point -> Boolean -> Maybe Point
+        move level pt space 
+          | pt.x >= 0.95 - level.speed && pt.y >= 0.5 - level.door / 2.0 && pt.y <= 0.5 + level.door / 2.0
             = Nothing
           | otherwise
             = let dy = if space then 1.0 else -1.0
-              in Just { x: pt.x + 0.002
-                      , y: pt.y + dy * 0.002
+              in Just { x: pt.x + level.speed
+                      , y: pt.y + dy * level.speed
                       }
 
-      background :: Int -> Eff _ Unit
-      background level = void do
+      background :: Lazy.List Level -> Eff _ Unit
+      background levels = void do
+        let level = fromJust (Lazy.head levels)
+          
         setFillStyle "black" ctx
         fillRect ctx { x: 0.0, y: 0.0, w: 1.0, h: 1.0 }
             
@@ -149,12 +173,12 @@ main = do
         strokeRect ctx { x: 0.045, y: 0.245, w: 0.91, h: 0.51 }
         
         setFillStyle "lightgreen" ctx
-        fillRect ctx { x: 0.045, y: 0.45, w: 0.005, h: 0.1 }
-        fillRect ctx { x: 0.95, y: 0.45, w: 0.005, h: 0.1 }
+        fillRect ctx { x: 0.045, y: 0.5 - level.door / 2.0, w: 0.005, h: level.door }
+        fillRect ctx { x: 0.95, y: 0.5 - level.door / 2.0, w: 0.005, h: level.door }
         
         setFillStyle "#222" ctx
         setStrokeStyle "lightgreen" ctx
-        for_ (fromJust (levels !! level)) \star -> do
+        for_ level.stars \star -> do
           let path = do arc ctx { x: star.x
                                 , y: star.y
                                 , r: star.r
@@ -174,7 +198,6 @@ main = do
             moveTo ctx hd.x hd.y
             for_ tl \p -> lineTo ctx p.x p.y
             stroke ctx
-          _ -> return unit
 
       render :: GameState -> Eff _ Unit
       render (Waiting w) = void do
