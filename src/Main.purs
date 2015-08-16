@@ -33,12 +33,6 @@ instance eqDirection :: Eq Direction where
   eq Up Up = true
   eq Down Down = true
   eq _ _ = false
-  
-type Mine = 
-  { x :: Number
-  , y :: Number
-  , r :: Number
-  }
 
 type Inputs = 
   { space :: Boolean
@@ -123,17 +117,17 @@ main = do
   let initialState :: Lazy.List Level -> GameState
       initialState levels = Waiting { path: Nil, nextLevel: levels }
   
-      update :: Inputs -> Milliseconds -> GameState -> GameState
+      update :: Inputs -> Milliseconds -> GameState -> Maybe GameState
       update inputs elapsed (Playing state@{ path: Cons hd tl })
         | testCollision (fromJust (Lazy.head state.level)) state.path 
-          = Waiting { path: state.path, nextLevel: state.level }
+          = Just $ Waiting { path: state.path, nextLevel: state.level }
         | (state.direction == Up) == inputs.space 
           = case move (fromJust (Lazy.head state.level)) hd inputs.space elapsed of
-              Just p -> playing (Cons p tl) state.level inputs
-              Nothing -> initialState (fromJust (Lazy.tail state.level))
+              Just p -> Just $ playing (Cons p tl) state.level inputs
+              Nothing -> Just $ initialState (fromJust (Lazy.tail state.level))
         | otherwise
-          = playing (Cons hd (Cons hd tl)) state.level inputs
-      update inputs _ w@(Waiting { nextLevel: nextLevel }) = if inputs.space then newGame nextLevel else w
+          = Just $ playing (Cons hd (Cons hd tl)) state.level inputs
+      update inputs _ w@(Waiting { nextLevel: nextLevel }) = if inputs.space then Just (newGame nextLevel) else Nothing
 
       testCollision :: Level -> List Point -> Boolean
       testCollision level (Cons p1 (Cons p2 _))
@@ -216,12 +210,19 @@ main = do
  
       loop :: GameState -> Eff _ Unit
       loop state = do
-        t0 <- nowEpochMilliseconds
         render state
-        inputs <- readRef inputsRef
-        requestAnimationFrame do
-          t1 <- nowEpochMilliseconds
-          loop (update inputs (t1 - t0) state)
+        go state
+        where
+        go state = do
+          t0 <- nowEpochMilliseconds
+          inputs <- readRef inputsRef
+          requestAnimationFrame do
+            t1 <- nowEpochMilliseconds
+            case update inputs (t1 - t0) state of
+              Just newState -> do
+                render newState 
+                go newState
+              Nothing -> go state 
  
   loop (initialState levels)
 

@@ -1837,7 +1837,7 @@ var PS = { };
               if (Prelude.otherwise) {
                   return a;
               };
-              throw new Error("Failed pattern match at Main line 86, column 1 - line 87, column 1: " + [ a.constructor.name, max.constructor.name ]);
+              throw new Error("Failed pattern match at Main line 81, column 1 - line 82, column 1: " + [ a.constructor.name, max.constructor.name ]);
           };
       };
   };
@@ -1890,7 +1890,7 @@ var PS = { };
                           return false;
                       };
                   };
-                  throw new Error("Failed pattern match at Main line 208, column 7 - line 209, column 7: " + [ level.constructor.name, _14.constructor.name ]);
+                  throw new Error("Failed pattern match at Main line 211, column 7 - line 212, column 7: " + [ level.constructor.name, _14.constructor.name ]);
               };
           };
           var renderPath = function (path) {
@@ -1922,7 +1922,7 @@ var PS = { };
                               if (!inputs.space) {
                                   return Down.value;
                               };
-                              throw new Error("Failed pattern match at Main line 110, column 1 - line 225, column 28: " + [ inputs.space.constructor.name ]);
+                              throw new Error("Failed pattern match at Main line 105, column 1 - line 227, column 28: " + [ inputs.space.constructor.name ]);
                           })()
                       });
                   };
@@ -1950,7 +1950,7 @@ var PS = { };
                               if (!space) {
                                   return -1.0;
                               };
-                              throw new Error("Failed pattern match at Main line 163, column 13 - line 166, column 9: " + [ space.constructor.name ]);
+                              throw new Error("Failed pattern match at Main line 158, column 13 - line 161, column 9: " + [ space.constructor.name ]);
                           })();
                           var dt = clamp(Prelude.ordNumber)(_15)(50.0);
                           var $$new = {
@@ -1975,35 +1975,35 @@ var PS = { };
                   return function (_13) {
                       if (_13 instanceof Playing && _13.value0.path instanceof Data_List.Cons) {
                           if (testCollision(Data_Maybe_Unsafe.fromJust(Data_List_Lazy.head(_13.value0.level)))(_13.value0.path)) {
-                              return new Waiting({
+                              return Data_Maybe.Just.create(new Waiting({
                                   path: _13.value0.path, 
                                   nextLevel: _13.value0.level
-                              });
+                              }));
                           };
                           if (Prelude["=="](Prelude.eqBoolean)(Prelude["=="](eqDirection)(_13.value0.direction)(Up.value))(inputs.space)) {
                               var _50 = move(Data_Maybe_Unsafe.fromJust(Data_List_Lazy.head(_13.value0.level)))(_13.value0.path.value0)(inputs.space)(elapsed);
                               if (_50 instanceof Data_Maybe.Just) {
-                                  return playing(new Data_List.Cons(_50.value0, _13.value0.path.value1))(_13.value0.level)(inputs);
+                                  return Data_Maybe.Just.create(playing(new Data_List.Cons(_50.value0, _13.value0.path.value1))(_13.value0.level)(inputs));
                               };
                               if (_50 instanceof Data_Maybe.Nothing) {
-                                  return initialState(Data_Maybe_Unsafe.fromJust(Data_List_Lazy.tail(_13.value0.level)));
+                                  return Data_Maybe.Just.create(initialState(Data_Maybe_Unsafe.fromJust(Data_List_Lazy.tail(_13.value0.level))));
                               };
-                              throw new Error("Failed pattern match at Main line 110, column 1 - line 225, column 28: " + [ _50.constructor.name ]);
+                              throw new Error("Failed pattern match at Main line 105, column 1 - line 227, column 28: " + [ _50.constructor.name ]);
                           };
                           if (Prelude.otherwise) {
-                              return playing(new Data_List.Cons(_13.value0.path.value0, new Data_List.Cons(_13.value0.path.value0, _13.value0.path.value1)))(_13.value0.level)(inputs);
+                              return Data_Maybe.Just.create(playing(new Data_List.Cons(_13.value0.path.value0, new Data_List.Cons(_13.value0.path.value0, _13.value0.path.value1)))(_13.value0.level)(inputs));
                           };
                       };
                       if (_13 instanceof Waiting) {
                           if (inputs.space) {
-                              return newGame(_13.value0.nextLevel);
+                              return new Data_Maybe.Just(newGame(_13.value0.nextLevel));
                           };
                           if (!inputs.space) {
-                              return _13;
+                              return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main line 110, column 1 - line 225, column 28: " + [ inputs.space.constructor.name ]);
+                          throw new Error("Failed pattern match at Main line 105, column 1 - line 227, column 28: " + [ inputs.space.constructor.name ]);
                       };
-                      throw new Error("Failed pattern match at Main line 110, column 1 - line 225, column 28: " + [ inputs.constructor.name, elapsed.constructor.name, _13.constructor.name ]);
+                      throw new Error("Failed pattern match at Main line 105, column 1 - line 227, column 28: " + [ inputs.constructor.name, elapsed.constructor.name, _13.constructor.name ]);
                   };
               };
           };
@@ -2078,22 +2078,39 @@ var PS = { };
                       return renderPath(_16.value0.path)();
                   });
               };
-              throw new Error("Failed pattern match at Main line 110, column 1 - line 225, column 28: " + [ _16.constructor.name ]);
+              throw new Error("Failed pattern match at Main line 105, column 1 - line 227, column 28: " + [ _16.constructor.name ]);
           };
           var loop = function (state) {
+              var go = function (state_1) {
+                  return function __do() {
+                      var _6 = Data_Date.nowEpochMilliseconds();
+                      var _5 = Control_Monad_Eff_Ref.readRef(_7)();
+                      return DOM_RequestAnimationFrame.requestAnimationFrame(function __do() {
+                          var _4 = Data_Date.nowEpochMilliseconds();
+                          return (function () {
+                              var _65 = update(_5)(Prelude["-"](Data_Time.ringMilliseconds)(_4)(_6))(state_1);
+                              if (_65 instanceof Data_Maybe.Just) {
+                                  return function __do() {
+                                      render(_65.value0)();
+                                      return go(_65.value0)();
+                                  };
+                              };
+                              if (_65 instanceof Data_Maybe.Nothing) {
+                                  return go(state_1);
+                              };
+                              throw new Error("Failed pattern match at Main line 105, column 1 - line 227, column 28: " + [ _65.constructor.name ]);
+                          })()();
+                      })();
+                  };
+              };
               return function __do() {
-                  var _6 = Data_Date.nowEpochMilliseconds();
                   render(state)();
-                  var _5 = Control_Monad_Eff_Ref.readRef(_7)();
-                  return DOM_RequestAnimationFrame.requestAnimationFrame(function __do() {
-                      var _4 = Data_Date.nowEpochMilliseconds();
-                      return loop(update(_5)(Prelude["-"](Data_Time.ringMilliseconds)(_4)(_6))(state))();
-                  })();
+                  return go(state)();
               };
           };
           return loop(initialState(levels))();
       };
-      throw new Error("Failed pattern match at Main line 110, column 1 - line 225, column 28: " + [ _9.constructor.name ]);
+      throw new Error("Failed pattern match at Main line 105, column 1 - line 227, column 28: " + [ _9.constructor.name ]);
   };
   exports["Playing"] = Playing;
   exports["Waiting"] = Waiting;
