@@ -1243,6 +1243,15 @@ var PS = { };
           };
       };
   };
+
+  exports.translate = function(t) {
+      return function(ctx) {
+          return function() {
+              ctx.translate(t.translateX, t.translateY);
+              return ctx;
+          };
+      };
+  };
  
 })(PS["Graphics.Canvas"] = PS["Graphics.Canvas"] || {});
 (function(exports) {
@@ -1279,6 +1288,7 @@ var PS = { };
   exports["fillPath"] = fillPath;
   exports["strokePath"] = strokePath;
   exports["getCanvasElementById"] = getCanvasElementById;
+  exports["translate"] = $foreign.translate;
   exports["scale"] = $foreign.scale;
   exports["strokeRect"] = $foreign.strokeRect;
   exports["fillRect"] = $foreign.fillRect;
@@ -1606,6 +1616,10 @@ var PS = { };
           var _6 = Graphics_Canvas.getContext2D(_7.value0)();
           var _5 = Signal_DOM.animationFrame();
           var _4 = Signal_DOM.keyPressed(32)();
+          Graphics_Canvas.translate({
+              translateX: 0.0, 
+              translateY: -170.0
+          })(_6)();
           Graphics_Canvas.scale({
               scaleX: 800.0, 
               scaleY: 800.0
@@ -1660,7 +1674,7 @@ var PS = { };
                               return false;
                           };
                       };
-                      throw new Error("Failed pattern match at Main line 120, column 9 - line 121, column 9: " + [ level.constructor.name, _13.constructor.name ]);
+                      throw new Error("Failed pattern match at Main line 121, column 9 - line 122, column 9: " + [ level.constructor.name, _13.constructor.name ]);
                   };
               };
               var playing = function (path) {
@@ -1676,7 +1690,7 @@ var PS = { };
                                   if (!inputs_1.space) {
                                       return Down.value;
                                   };
-                                  throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ inputs_1.space.constructor.name ]);
+                                  throw new Error("Failed pattern match at Main line 101, column 1 - line 212, column 30: " + [ inputs_1.space.constructor.name ]);
                               })()
                           });
                       };
@@ -1707,14 +1721,14 @@ var PS = { };
                                   if (!space_1) {
                                       return -1.0;
                                   };
-                                  throw new Error("Failed pattern match at Main line 159, column 19 - line 160, column 15: " + [ space_1.constructor.name ]);
+                                  throw new Error("Failed pattern match at Main line 160, column 19 - line 161, column 15: " + [ space_1.constructor.name ]);
                               })();
                               return new Data_Maybe.Just({
                                   x: pt.x + level.speed, 
                                   y: pt.y + dy * level.speed
                               });
                           };
-                          throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ level.constructor.name, pt.constructor.name, space_1.constructor.name ]);
+                          throw new Error("Failed pattern match at Main line 101, column 1 - line 212, column 30: " + [ level.constructor.name, pt.constructor.name, space_1.constructor.name ]);
                       };
                   };
               };
@@ -1735,7 +1749,7 @@ var PS = { };
                               if (_42 instanceof Data_Maybe.Nothing) {
                                   return initialState(Data_Maybe_Unsafe.fromJust(Data_List_Lazy.tail(_12.value0.level)));
                               };
-                              throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ _42.constructor.name ]);
+                              throw new Error("Failed pattern match at Main line 101, column 1 - line 212, column 30: " + [ _42.constructor.name ]);
                           };
                           if (Prelude.otherwise) {
                               return playing(new Data_List.Cons(_12.value0.path.value0, new Data_List.Cons(_12.value0.path.value0, _12.value0.path.value1)))(_12.value0.level)(inputs_1);
@@ -1748,9 +1762,9 @@ var PS = { };
                           if (!inputs_1.space) {
                               return _12;
                           };
-                          throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ inputs_1.space.constructor.name ]);
+                          throw new Error("Failed pattern match at Main line 101, column 1 - line 212, column 30: " + [ inputs_1.space.constructor.name ]);
                       };
-                      throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ inputs_1.constructor.name, _12.constructor.name ]);
+                      throw new Error("Failed pattern match at Main line 101, column 1 - line 212, column 30: " + [ inputs_1.constructor.name, _12.constructor.name ]);
                   };
               };
               return Signal.foldp(update)(initialState(levels))(Signal.sampleOn(_5)(inputs));
@@ -1826,11 +1840,11 @@ var PS = { };
                       return renderPath(_11.value0.path)();
                   });
               };
-              throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ _11.constructor.name ]);
+              throw new Error("Failed pattern match at Main line 101, column 1 - line 212, column 30: " + [ _11.constructor.name ]);
           };
           return Signal.runSignal(Prelude["<$>"](Signal.functorSignal)(render)(state))();
       };
-      throw new Error("Failed pattern match at Main line 101, column 1 - line 211, column 30: " + [ _7.constructor.name ]);
+      throw new Error("Failed pattern match at Main line 101, column 1 - line 212, column 30: " + [ _7.constructor.name ]);
   };
   exports["Playing"] = Playing;
   exports["Waiting"] = Waiting;

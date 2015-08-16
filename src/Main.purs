@@ -105,6 +105,7 @@ main = do
   frame <- animationFrame
   space <- keyPressed 32  
 
+  translate { translateX: 0.0, translateY: -170.0 } ctx
   scale { scaleX: 800.0, scaleY: 800.0 } ctx
   setLineWidth 0.001 ctx
 
