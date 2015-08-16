@@ -53,6 +53,8 @@ type Level =
   { stars :: List Star
   , door  :: Number
   , speed :: Number
+  , entry :: Number
+  , exit  :: Number
   }
   
 data GameState 
@@ -96,7 +98,9 @@ unsafeLevel level = unsafePure do
            , y: 0.15 + toNumber y * 0.7 / 8.0 + dy
            , r: r
            }
-  return { stars: stars, door: door, speed: speed }
+  entry <- randomRange (0.25 + door / 2.0) (0.75 - door / 2.0)
+  exit  <- randomRange (0.25 + door / 2.0) (0.75 - door / 2.0)
+  return { stars: stars, door: door, speed: speed, entry: entry, exit: exit }
   where
   unsafePure :: forall eff a. Eff eff a -> a
   unsafePure = runPure <<< Control.Monad.Eff.Unsafe.unsafeInterleaveEff
@@ -135,7 +139,7 @@ main = do
       testCollision level (Cons p1 (Cons p2 _))
         | p1.y <= 0.25 = true
         | p1.y >= 0.75 = true
-        | p1.x > 0.95 && (p1.y < 0.5 - level.door / 2.0 || p1.y > 0.5 + level.door / 2.0) = true
+        | p1.x > 0.95 && (p1.y < level.exit - level.door / 2.0 || p1.y > level.exit + level.door / 2.0) = true
         | any (\star -> dist2 p1 star < star.r * star.r) level.stars = true
         | otherwise = false
           
@@ -147,7 +151,7 @@ main = do
         }
         where
         p = { x: 0.05
-            , y: 0.5
+            , y: (fromJust (Lazy.head levels)).entry
             }
           
       playing :: List Point -> Lazy.List Level -> Inputs -> GameState
@@ -160,7 +164,7 @@ main = do
             new = { x: pt.x + level.speed * dt
                   , y: pt.y + dy * level.speed * dt
                   }
-        guard (new.x < 0.95 || new.y < 0.5 - level.door / 2.0 || new.y > 0.5 + level.door / 2.0)
+        guard (new.x < 0.95 || new.y < level.exit - level.door / 2.0 || new.y > level.exit + level.door / 2.0)
         return new
 
       background :: Lazy.List Level -> Eff _ Unit
@@ -175,8 +179,8 @@ main = do
         strokeRect ctx { x: 0.045, y: 0.245, w: 0.91, h: 0.51 }
         
         setFillStyle "lightgreen" ctx
-        fillRect ctx { x: 0.045, y: 0.5 - level.door / 2.0, w: 0.005, h: level.door }
-        fillRect ctx { x: 0.95, y: 0.5 - level.door / 2.0, w: 0.005, h: level.door }
+        fillRect ctx { x: 0.045, y: level.entry - level.door / 2.0, w: 0.005, h: level.door }
+        fillRect ctx { x: 0.95, y: level.exit - level.door / 2.0, w: 0.005, h: level.door }
         
         setFillStyle "#222" ctx
         setStrokeStyle "lightgreen" ctx

@@ -1793,12 +1793,12 @@ var PS = { };
   var len2 = function (p) {
       return p.x * p.x + p.y * p.y;
   };
-  var eqDirection = new Prelude.Eq(function (_11) {
-      return function (_12) {
-          if (_11 instanceof Up && _12 instanceof Up) {
+  var eqDirection = new Prelude.Eq(function (_13) {
+      return function (_14) {
+          if (_13 instanceof Up && _14 instanceof Up) {
               return true;
           };
-          if (_11 instanceof Down && _12 instanceof Down) {
+          if (_13 instanceof Down && _14 instanceof Down) {
               return true;
           };
           return false;
@@ -1823,21 +1823,25 @@ var PS = { };
           var r = decay(5.0e-3)(2.0e-2)(level);
           var door = decay(0.13999999999999999)(4.0e-2)(level);
           return function __do() {
-              var _3 = Data_Traversable["for"](Control_Monad_Eff.applicativeEff)(Data_List.traversableList)(Prelude["<*>"](Data_List.applyList)(Prelude["<$>"](Data_List.functorList)(Data_Tuple.Tuple.create)(Data_List[".."](0)(8)))(Data_List[".."](2)(6)))(function (_10) {
+              var _5 = Data_Traversable["for"](Control_Monad_Eff.applicativeEff)(Data_List.traversableList)(Prelude["<*>"](Data_List.applyList)(Prelude["<$>"](Data_List.functorList)(Data_Tuple.Tuple.create)(Data_List[".."](0)(8)))(Data_List[".."](2)(6)))(function (_12) {
                   return function __do() {
                       var _2 = Control_Monad_Eff_Random.randomRange(-2.5e-2)(2.5e-2)();
                       var _1 = Control_Monad_Eff_Random.randomRange(-2.5e-2)(2.5e-2)();
                       return Prelude["return"](Control_Monad_Eff.applicativeEff)({
-                          x: 0.15 + (Data_Int.toNumber(_10.value0) * 0.7) / 8.0 + _2, 
-                          y: 0.15 + (Data_Int.toNumber(_10.value1) * 0.7) / 8.0 + _1, 
+                          x: 0.15 + (Data_Int.toNumber(_12.value0) * 0.7) / 8.0 + _2, 
+                          y: 0.15 + (Data_Int.toNumber(_12.value1) * 0.7) / 8.0 + _1, 
                           r: r
                       })();
                   };
               })();
+              var _4 = Control_Monad_Eff_Random.randomRange(0.25 + door / 2.0)(0.75 - door / 2.0)();
+              var _3 = Control_Monad_Eff_Random.randomRange(0.25 + door / 2.0)(0.75 - door / 2.0)();
               return Prelude["return"](Control_Monad_Eff.applicativeEff)({
-                  stars: _3, 
+                  stars: _5, 
                   door: door, 
-                  speed: speed
+                  speed: speed, 
+                  entry: _4, 
+                  exit: _3
               })();
           };
       })());
@@ -1852,52 +1856,52 @@ var PS = { };
               if (Prelude.otherwise) {
                   return a;
               };
-              throw new Error("Failed pattern match at Main line 83, column 1 - line 84, column 1: " + [ a.constructor.name, max.constructor.name ]);
+              throw new Error("Failed pattern match at Main line 85, column 1 - line 86, column 1: " + [ a.constructor.name, max.constructor.name ]);
           };
       };
   };
   var main = function __do() {
-      var _9 = Graphics_Canvas.getCanvasElementById("canvas")();
-      if (_9 instanceof Data_Maybe.Just) {
-          var _8 = Graphics_Canvas.getContext2D(_9.value0)();
-          var _7 = Control_Monad_Eff_Ref.newRef({
+      var _11 = Graphics_Canvas.getCanvasElementById("canvas")();
+      if (_11 instanceof Data_Maybe.Just) {
+          var _10 = Graphics_Canvas.getContext2D(_11.value0)();
+          var _9 = Control_Monad_Eff_Ref.newRef({
               space: false
           })();
           $foreign.onSpaceBar(function (b) {
-              return Control_Monad_Eff_Ref.modifyRef(_7)(function (_0) {
-                  var _30 = {};
-                  for (var _31 in _0) {
-                      if (_0.hasOwnProperty(_31)) {
-                          _30[_31] = _0[_31];
+              return Control_Monad_Eff_Ref.modifyRef(_9)(function (_0) {
+                  var _34 = {};
+                  for (var _35 in _0) {
+                      if (_0.hasOwnProperty(_35)) {
+                          _34[_35] = _0[_35];
                       };
                   };
-                  _30.space = b;
-                  return _30;
+                  _34.space = b;
+                  return _34;
               });
           })();
           Graphics_Canvas.translate({
               translateX: 0.0, 
               translateY: -170.0
-          })(_8)();
+          })(_10)();
           Graphics_Canvas.scale({
               scaleX: 800.0, 
               scaleY: 800.0
-          })(_8)();
-          Graphics_Canvas.setLineWidth(1.0e-3)(_8)();
+          })(_10)();
+          Graphics_Canvas.setLineWidth(1.0e-3)(_10)();
           var testCollision = function (level) {
-              return function (_14) {
-                  if (_14 instanceof Data_List.Cons && _14.value1 instanceof Data_List.Cons) {
-                      if (_14.value0.y <= 0.25) {
+              return function (_16) {
+                  if (_16 instanceof Data_List.Cons && _16.value1 instanceof Data_List.Cons) {
+                      if (_16.value0.y <= 0.25) {
                           return true;
                       };
-                      if (_14.value0.y >= 0.75) {
+                      if (_16.value0.y >= 0.75) {
                           return true;
                       };
-                      if (_14.value0.x > 0.95 && (_14.value0.y < 0.5 - level.door / 2.0 || _14.value0.y > 0.5 + level.door / 2.0)) {
+                      if (_16.value0.x > 0.95 && (_16.value0.y < level.exit - level.door / 2.0 || _16.value0.y > level.exit + level.door / 2.0)) {
                           return true;
                       };
                       if (Data_Foldable.any(Data_List.foldableList)(Prelude.booleanAlgebraBoolean)(function (star) {
-                          return dist2(_14.value0)(star) < star.r * star.r;
+                          return dist2(_16.value0)(star) < star.r * star.r;
                       })(level.stars)) {
                           return true;
                       };
@@ -1905,20 +1909,20 @@ var PS = { };
                           return false;
                       };
                   };
-                  throw new Error("Failed pattern match at Main line 213, column 7 - line 214, column 7: " + [ level.constructor.name, _14.constructor.name ]);
+                  throw new Error("Failed pattern match at Main line 217, column 7 - line 218, column 7: " + [ level.constructor.name, _16.constructor.name ]);
               };
           };
           var renderPath = function (path) {
               return function __do() {
-                  Graphics_Canvas.setStrokeStyle("lightgreen")(_8)();
+                  Graphics_Canvas.setStrokeStyle("lightgreen")(_10)();
                   if (path instanceof Data_List.Cons) {
                       return Prelude["void"](Control_Monad_Eff.functorEff)(function __do() {
-                          Graphics_Canvas.beginPath(_8)();
-                          Graphics_Canvas.moveTo(_8)(path.value0.x)(path.value0.y)();
+                          Graphics_Canvas.beginPath(_10)();
+                          Graphics_Canvas.moveTo(_10)(path.value0.x)(path.value0.y)();
                           Data_Foldable.for_(Control_Monad_Eff.applicativeEff)(Data_List.foldableList)(path.value1)(function (p) {
-                              return Graphics_Canvas.lineTo(_8)(p.x)(p.y);
+                              return Graphics_Canvas.lineTo(_10)(p.x)(p.y);
                           })();
-                          return Graphics_Canvas.stroke(_8)();
+                          return Graphics_Canvas.stroke(_10)();
                       })();
                   };
                   return Prelude["return"](Control_Monad_Eff.applicativeEff)(Prelude.unit)();
@@ -1937,7 +1941,7 @@ var PS = { };
                               if (!inputs.space) {
                                   return Down.value;
                               };
-                              throw new Error("Failed pattern match at Main line 107, column 1 - line 229, column 28: " + [ inputs.space.constructor.name ]);
+                              throw new Error("Failed pattern match at Main line 111, column 1 - line 233, column 28: " + [ inputs.space.constructor.name ]);
                           })()
                       });
                   };
@@ -1946,7 +1950,7 @@ var PS = { };
           var newGame = function (levels_1) {
               var p = {
                   x: 5.0e-2, 
-                  y: 0.5
+                  y: (Data_Maybe_Unsafe.fromJust(Data_List_Lazy.head(levels_1))).entry
               };
               return new Playing({
                   path: Data_List.toList(Data_Foldable.foldableArray)([ p, p ]), 
@@ -1957,7 +1961,7 @@ var PS = { };
           var move = function (level) {
               return function (pt) {
                   return function (space) {
-                      return function (_15) {
+                      return function (_17) {
                           var dy = (function () {
                               if (space) {
                                   return 1.0;
@@ -1965,14 +1969,14 @@ var PS = { };
                               if (!space) {
                                   return -1.0;
                               };
-                              throw new Error("Failed pattern match at Main line 160, column 13 - line 163, column 9: " + [ space.constructor.name ]);
+                              throw new Error("Failed pattern match at Main line 164, column 13 - line 167, column 9: " + [ space.constructor.name ]);
                           })();
-                          var dt = clamp(Prelude.ordNumber)(_15)(50.0);
+                          var dt = clamp(Prelude.ordNumber)(_17)(50.0);
                           var $$new = {
                               x: pt.x + level.speed * dt, 
                               y: pt.y + dy * level.speed * dt
                           };
-                          return Prelude.bind(Data_Maybe.bindMaybe)(Control_MonadPlus.guard(Data_Maybe.monadPlusMaybe)($$new.x < 0.95 || ($$new.y < 0.5 - level.door / 2.0 || $$new.y > 0.5 + level.door / 2.0)))(function () {
+                          return Prelude.bind(Data_Maybe.bindMaybe)(Control_MonadPlus.guard(Data_Maybe.monadPlusMaybe)($$new.x < 0.95 || ($$new.y < level.exit - level.door / 2.0 || $$new.y > level.exit + level.door / 2.0)))(function () {
                               return Prelude["return"](Data_Maybe.applicativeMaybe)($$new);
                           });
                       };
@@ -1987,38 +1991,38 @@ var PS = { };
           };
           var update = function (inputs) {
               return function (elapsed) {
-                  return function (_13) {
-                      if (_13 instanceof Playing && _13.value0.path instanceof Data_List.Cons) {
-                          if (testCollision(Data_Maybe_Unsafe.fromJust(Data_List_Lazy.head(_13.value0.level)))(_13.value0.path)) {
+                  return function (_15) {
+                      if (_15 instanceof Playing && _15.value0.path instanceof Data_List.Cons) {
+                          if (testCollision(Data_Maybe_Unsafe.fromJust(Data_List_Lazy.head(_15.value0.level)))(_15.value0.path)) {
                               return Data_Maybe.Just.create(new Waiting({
-                                  path: _13.value0.path, 
-                                  nextLevel: _13.value0.level
+                                  path: _15.value0.path, 
+                                  nextLevel: _15.value0.level
                               }));
                           };
-                          if (Prelude["=="](Prelude.eqBoolean)(Prelude["=="](eqDirection)(_13.value0.direction)(Up.value))(inputs.space)) {
-                              var _50 = move(Data_Maybe_Unsafe.fromJust(Data_List_Lazy.head(_13.value0.level)))(_13.value0.path.value0)(inputs.space)(elapsed);
-                              if (_50 instanceof Data_Maybe.Just) {
-                                  return Data_Maybe.Just.create(playing(new Data_List.Cons(_50.value0, _13.value0.path.value1))(_13.value0.level)(inputs));
+                          if (Prelude["=="](Prelude.eqBoolean)(Prelude["=="](eqDirection)(_15.value0.direction)(Up.value))(inputs.space)) {
+                              var _54 = move(Data_Maybe_Unsafe.fromJust(Data_List_Lazy.head(_15.value0.level)))(_15.value0.path.value0)(inputs.space)(elapsed);
+                              if (_54 instanceof Data_Maybe.Just) {
+                                  return Data_Maybe.Just.create(playing(new Data_List.Cons(_54.value0, _15.value0.path.value1))(_15.value0.level)(inputs));
                               };
-                              if (_50 instanceof Data_Maybe.Nothing) {
-                                  return Data_Maybe.Just.create(initialState(Data_Maybe_Unsafe.fromJust(Data_List_Lazy.tail(_13.value0.level))));
+                              if (_54 instanceof Data_Maybe.Nothing) {
+                                  return Data_Maybe.Just.create(initialState(Data_Maybe_Unsafe.fromJust(Data_List_Lazy.tail(_15.value0.level))));
                               };
-                              throw new Error("Failed pattern match at Main line 107, column 1 - line 229, column 28: " + [ _50.constructor.name ]);
+                              throw new Error("Failed pattern match at Main line 111, column 1 - line 233, column 28: " + [ _54.constructor.name ]);
                           };
                           if (Prelude.otherwise) {
-                              return Data_Maybe.Just.create(playing(new Data_List.Cons(_13.value0.path.value0, new Data_List.Cons(_13.value0.path.value0, _13.value0.path.value1)))(_13.value0.level)(inputs));
+                              return Data_Maybe.Just.create(playing(new Data_List.Cons(_15.value0.path.value0, new Data_List.Cons(_15.value0.path.value0, _15.value0.path.value1)))(_15.value0.level)(inputs));
                           };
                       };
-                      if (_13 instanceof Waiting) {
+                      if (_15 instanceof Waiting) {
                           if (inputs.space) {
-                              return new Data_Maybe.Just(newGame(_13.value0.nextLevel));
+                              return new Data_Maybe.Just(newGame(_15.value0.nextLevel));
                           };
                           if (!inputs.space) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main line 107, column 1 - line 229, column 28: " + [ inputs.space.constructor.name ]);
+                          throw new Error("Failed pattern match at Main line 111, column 1 - line 233, column 28: " + [ inputs.space.constructor.name ]);
                       };
-                      throw new Error("Failed pattern match at Main line 107, column 1 - line 229, column 28: " + [ inputs.constructor.name, elapsed.constructor.name, _13.constructor.name ]);
+                      throw new Error("Failed pattern match at Main line 111, column 1 - line 233, column 28: " + [ inputs.constructor.name, elapsed.constructor.name, _15.constructor.name ]);
                   };
               };
           };
@@ -2026,94 +2030,94 @@ var PS = { };
               return Prelude["void"](Control_Monad_Eff.functorEff)((function () {
                   var level = Data_Maybe_Unsafe.fromJust(Data_List_Lazy.head(levels_1));
                   return function __do() {
-                      Graphics_Canvas.setFillStyle("black")(_8)();
-                      Graphics_Canvas.fillRect(_8)({
+                      Graphics_Canvas.setFillStyle("black")(_10)();
+                      Graphics_Canvas.fillRect(_10)({
                           x: 0.0, 
                           y: 0.0, 
                           w: 1.0, 
                           h: 1.0
                       })();
-                      Graphics_Canvas.setStrokeStyle("lightgreen")(_8)();
-                      Graphics_Canvas.strokeRect(_8)({
+                      Graphics_Canvas.setStrokeStyle("lightgreen")(_10)();
+                      Graphics_Canvas.strokeRect(_10)({
                           x: 5.0e-2, 
                           y: 0.25, 
                           w: 0.9, 
                           h: 0.5
                       })();
-                      Graphics_Canvas.strokeRect(_8)({
+                      Graphics_Canvas.strokeRect(_10)({
                           x: 4.5e-2, 
                           y: 0.24500000000000002, 
                           w: 0.9099999999999999, 
                           h: 0.51
                       })();
-                      Graphics_Canvas.setFillStyle("lightgreen")(_8)();
-                      Graphics_Canvas.fillRect(_8)({
+                      Graphics_Canvas.setFillStyle("lightgreen")(_10)();
+                      Graphics_Canvas.fillRect(_10)({
                           x: 4.5e-2, 
-                          y: 0.5 - level.door / 2.0, 
+                          y: level.entry - level.door / 2.0, 
                           w: 5.0e-3, 
                           h: level.door
                       })();
-                      Graphics_Canvas.fillRect(_8)({
+                      Graphics_Canvas.fillRect(_10)({
                           x: 0.95, 
-                          y: 0.5 - level.door / 2.0, 
+                          y: level.exit - level.door / 2.0, 
                           w: 5.0e-3, 
                           h: level.door
                       })();
-                      Graphics_Canvas.setFillStyle("#222")(_8)();
-                      Graphics_Canvas.setStrokeStyle("lightgreen")(_8)();
+                      Graphics_Canvas.setFillStyle("#222")(_10)();
+                      Graphics_Canvas.setStrokeStyle("lightgreen")(_10)();
                       return Data_Foldable.for_(Control_Monad_Eff.applicativeEff)(Data_List.foldableList)(level.stars)(function (star) {
                           var path = function __do() {
-                              Graphics_Canvas.arc(_8)({
+                              Graphics_Canvas.arc(_10)({
                                   x: star.x, 
                                   y: star.y, 
                                   r: star.r, 
                                   start: 0.0, 
                                   end: $$Math.pi * 2.0
                               })();
-                              return Graphics_Canvas.closePath(_8)();
+                              return Graphics_Canvas.closePath(_10)();
                           };
                           return function __do() {
-                              Graphics_Canvas.fillPath(_8)(path)();
-                              return Graphics_Canvas.strokePath(_8)(path)();
+                              Graphics_Canvas.fillPath(_10)(path)();
+                              return Graphics_Canvas.strokePath(_10)(path)();
                           };
                       })();
                   };
               })());
           };
-          var render = function (_16) {
-              if (_16 instanceof Waiting) {
+          var render = function (_18) {
+              if (_18 instanceof Waiting) {
                   return Prelude["void"](Control_Monad_Eff.functorEff)(function __do() {
-                      background(_16.value0.nextLevel)();
-                      return renderPath(_16.value0.path)();
+                      background(_18.value0.nextLevel)();
+                      return renderPath(_18.value0.path)();
                   });
               };
-              if (_16 instanceof Playing) {
+              if (_18 instanceof Playing) {
                   return Prelude["void"](Control_Monad_Eff.functorEff)(function __do() {
-                      background(_16.value0.level)();
-                      return renderPath(_16.value0.path)();
+                      background(_18.value0.level)();
+                      return renderPath(_18.value0.path)();
                   });
               };
-              throw new Error("Failed pattern match at Main line 107, column 1 - line 229, column 28: " + [ _16.constructor.name ]);
+              throw new Error("Failed pattern match at Main line 111, column 1 - line 233, column 28: " + [ _18.constructor.name ]);
           };
           var loop = function (state) {
               var go = function (state_1) {
                   return function __do() {
-                      var _6 = Data_Date.nowEpochMilliseconds();
-                      var _5 = Control_Monad_Eff_Ref.readRef(_7)();
+                      var _8 = Data_Date.nowEpochMilliseconds();
+                      var _7 = Control_Monad_Eff_Ref.readRef(_9)();
                       return DOM_RequestAnimationFrame.requestAnimationFrame(function __do() {
-                          var _4 = Data_Date.nowEpochMilliseconds();
+                          var _6 = Data_Date.nowEpochMilliseconds();
                           return (function () {
-                              var _65 = update(_5)(Prelude["-"](Data_Time.ringMilliseconds)(_4)(_6))(state_1);
-                              if (_65 instanceof Data_Maybe.Just) {
+                              var _69 = update(_7)(Prelude["-"](Data_Time.ringMilliseconds)(_6)(_8))(state_1);
+                              if (_69 instanceof Data_Maybe.Just) {
                                   return function __do() {
-                                      render(_65.value0)();
-                                      return go(_65.value0)();
+                                      render(_69.value0)();
+                                      return go(_69.value0)();
                                   };
                               };
-                              if (_65 instanceof Data_Maybe.Nothing) {
+                              if (_69 instanceof Data_Maybe.Nothing) {
                                   return $foreign.onSpaceBarOnce(go(state_1));
                               };
-                              throw new Error("Failed pattern match at Main line 107, column 1 - line 229, column 28: " + [ _65.constructor.name ]);
+                              throw new Error("Failed pattern match at Main line 111, column 1 - line 233, column 28: " + [ _69.constructor.name ]);
                           })()();
                       })();
                   };
@@ -2125,7 +2129,7 @@ var PS = { };
           };
           return loop(initialState(levels))();
       };
-      throw new Error("Failed pattern match at Main line 107, column 1 - line 229, column 28: " + [ _9.constructor.name ]);
+      throw new Error("Failed pattern match at Main line 111, column 1 - line 233, column 28: " + [ _11.constructor.name ]);
   };
   exports["Playing"] = Playing;
   exports["Waiting"] = Waiting;
