@@ -19,6 +19,7 @@
     "purescript-dom": "~0.2.0",
     "purescript-requestanimationframe": "git@github.com:paf31/purescript-requestAnimationFrame.git#master",
     "purescript-refs": "~0.2.0",
-    "purescript-datetime": "~0.9.0"
+    "purescript-datetime": "~0.9.0",
+    "purescript-drawing": "~0.3.3"
   }
 }

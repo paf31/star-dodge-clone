@@ -12,12 +12,13 @@ import Control.Monad.Eff.Ref
 import Data.Int (toNumber)
 import Data.Maybe
 import Data.Maybe.Unsafe (fromJust)
+import Data.Monoid (mempty) 
 import Data.Tuple (Tuple(..))
 import Data.Either (Either(..))
 import Data.Functor (($>))
-import Data.Foldable (for_, any)
+import Data.Foldable (for_, any, fold)
 import Data.Traversable (for)
-import Data.List (List(..), (..), toList)
+import Data.List (List(..), (..), toList, fromList, null)
 import qualified Data.List.Lazy as Lazy
 import Data.Date (nowEpochMilliseconds)
 import Data.Time (Milliseconds(..))
@@ -25,7 +26,8 @@ import Data.Time (Milliseconds(..))
 import DOM
 import DOM.RequestAnimationFrame (requestAnimationFrame)
 
-import Graphics.Canvas
+import qualified Graphics.Canvas as C
+import qualified Graphics.Drawing as D
 
 data Direction = Up | Down
   
@@ -88,18 +90,19 @@ clamp a max | a > max = max
   
 unsafeLevel :: Int -> Level
 unsafeLevel level = unsafePure do
-  let door  = decay 0.14    0.04    level
-      speed = decay 0.00009 0.00012 level
-      r     = decay 0.005   0.02    level
-  stars <- for (Tuple <$> 0 .. 8 <*> 2 .. 6) \(Tuple x y) -> do
-    dx <- randomRange (-0.025) 0.025
-    dy <- randomRange (-0.025) 0.025
-    return { x: 0.15 + toNumber x * 0.7 / 8.0 + dx
-           , y: 0.15 + toNumber y * 0.7 / 8.0 + dy
+  let door  = decay 100.0    20.0   level
+      speed = decay 0.09     0.12   level
+      r     = decay 3.0      15.0   level
+      d     = decay 15.0     25.0   level
+  stars <- for (Tuple <$> 0 .. 8 <*> 0 .. 4) \(Tuple x y) -> do
+    dx <- randomRange (-d) d
+    dy <- randomRange (-d) d
+    return { x: 100.0 + toNumber x * 70.0 + dx
+           , y: 100.0 + toNumber y * 70.0 + dy
            , r: r
            }
-  entry <- randomRange (0.25 + door / 2.0) (0.75 - door / 2.0)
-  exit  <- randomRange (0.25 + door / 2.0) (0.75 - door / 2.0)
+  entry <- randomRange (50.0 + door / 2.0) (450.0 - door / 2.0)
+  exit  <- randomRange (50.0 + door / 2.0) (450.0 - door / 2.0)
   return { stars: stars, door: door, speed: speed, entry: entry, exit: exit }
   where
   unsafePure :: forall eff a. Eff eff a -> a
@@ -109,16 +112,12 @@ levels :: Lazy.List Level
 levels = unsafeLevel <$> Lazy.iterate (1 +) 0
   
 main = do
-  Just canvas <- getCanvasElementById "canvas"
-  ctx <- getContext2D canvas
+  Just canvas <- C.getCanvasElementById "canvas"
+  ctx <- C.getContext2D canvas
   
   inputsRef <- newRef { space: false }
   
   onSpaceBar (\b -> modifyRef inputsRef (_ { space = b }))
-
-  translate { translateX: 0.0, translateY: -170.0 } ctx
-  scale { scaleX: 800.0, scaleY: 800.0 } ctx
-  setLineWidth 0.001 ctx
 
   let initialState :: Lazy.List Level -> GameState
       initialState levels = Waiting { path: Nil, nextLevel: levels }
@@ -137,9 +136,9 @@ main = do
 
       testCollision :: Level -> List Point -> Boolean
       testCollision level (Cons p1 (Cons p2 _))
-        | p1.y <= 0.25 = true
-        | p1.y >= 0.75 = true
-        | p1.x > 0.95 && (p1.y < level.exit - level.door / 2.0 || p1.y > level.exit + level.door / 2.0) = true
+        | p1.y <= 50.0 = true
+        | p1.y >= 450.0 = true
+        | p1.x > 750.0 && (p1.y < level.exit - level.door / 2.0 || p1.y > level.exit + level.door / 2.0) = true
         | any (\star -> dist2 p1 star < star.r * star.r) level.stars = true
         | otherwise = false
           
@@ -150,7 +149,7 @@ main = do
         , level: levels
         }
         where
-        p = { x: 0.05
+        p = { x: 50.0
             , y: (fromJust (Lazy.head levels)).entry
             }
           
@@ -164,59 +163,52 @@ main = do
             new = { x: pt.x + level.speed * dt
                   , y: pt.y + dy * level.speed * dt
                   }
-        guard (new.x < 0.95 || new.y < level.exit - level.door / 2.0 || new.y > level.exit + level.door / 2.0)
+        guard (new.x < 750.0 || new.y < level.exit - level.door / 2.0 || new.y > level.exit + level.door / 2.0)
         return new
 
-      background :: Lazy.List Level -> Eff _ Unit
-      background levels = void do
+      clearCanvas :: Eff _ Unit
+      clearCanvas = void do
+        C.setFillStyle "#1B1C1B" ctx
+        C.fillRect ctx { x: 0.0, y: 0.0, w: 800.0, h: 500.0 }
+
+      lightGreen :: D.Color
+      lightGreen = D.lighten 0.7 D.green
+
+      background :: Lazy.List Level -> D.Drawing
+      background levels =
         let level = fromJust (Lazy.head levels)
-          
-        setFillStyle "#1B1C1B" ctx
-        fillRect ctx { x: 0.0, y: 0.0, w: 1.0, h: 1.0 }
-            
-        setStrokeStyle "lightgreen" ctx
-        strokeRect ctx { x: 0.05, y: 0.25, w: 0.9, h: 0.5 }
-        strokeRect ctx { x: 0.045, y: 0.245, w: 0.91, h: 0.51 }
+        in fold $ 
+             [ D.outlined (D.outlineColor lightGreen) 
+                          (D.rectangle 50.0 50.0 700.0 400.0 <> 
+                           D.rectangle 45.0 45.0 710.0 410.0)
+             , D.filled (D.fillColor lightGreen)
+                        (D.rectangle 45.0  (level.entry - level.door / 2.0) 5.0 level.door <>
+                         D.rectangle 750.0 (level.exit  - level.door / 2.0) 5.0 level.door)
+             ] ++
+             map (\star -> D.outlined (D.outlineColor lightGreen) 
+                                      (D.circle star.x star.y star.r))
+                 (fromList level.stars)
         
-        setFillStyle "lightgreen" ctx
-        fillRect ctx { x: 0.045, y: level.entry - level.door / 2.0, w: 0.005, h: level.door }
-        fillRect ctx { x: 0.95, y: level.exit - level.door / 2.0, w: 0.005, h: level.door }
-        
-        setFillStyle "#222" ctx
-        setStrokeStyle "lightgreen" ctx
-        for_ level.stars \star -> do
-          let path = do arc ctx { x: star.x
-                                , y: star.y
-                                , r: star.r
-                                , start: 0.0
-                                , end: Math.pi * 2.0
-                                }
-                        closePath ctx
-          fillPath ctx path
-          strokePath ctx path
+      renderPath :: List Point -> D.Drawing
+      renderPath path | not null path =
+        D.outlined (D.outlineColor lightGreen) 
+                   (D.path path)
+      renderPath _ = mempty
 
-      renderPath :: List Point -> Eff _ Unit
-      renderPath path = do
-        setStrokeStyle "lightgreen" ctx
-        case path of
-          Cons hd tl -> void do
-            beginPath ctx
-            moveTo ctx hd.x hd.y
-            for_ tl \p -> lineTo ctx p.x p.y
-            stroke ctx
-          _ -> return unit
-
-      render :: GameState -> Eff _ Unit
-      render (Waiting w) = void do
-        background w.nextLevel
-        renderPath w.path
-      render (Playing state) = void do          
-        background state.level
-        renderPath state.path
+      scene :: GameState -> D.Drawing
+      scene (Waiting w) = fold 
+        [ background w.nextLevel
+        , renderPath w.path
+        ]
+      scene (Playing state) = fold   
+        [ background state.level
+        , renderPath state.path
+        ]
  
       loop :: GameState -> Eff _ Unit
       loop state = do
-        render state
+        clearCanvas
+        D.render ctx $ scene state
         go state
         where
         go state = do
@@ -226,7 +218,8 @@ main = do
             t1 <- nowEpochMilliseconds
             case update inputs (t1 - t0) state of
               Just newState -> do
-                render newState 
+                clearCanvas
+                D.render ctx $ scene newState 
                 go newState
               Nothing -> onSpaceBarOnce (go state)
  
