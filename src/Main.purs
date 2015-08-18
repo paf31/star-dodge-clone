@@ -16,7 +16,7 @@ import Data.Monoid (mempty)
 import Data.Tuple (Tuple(..))
 import Data.Either (Either(..))
 import Data.Functor (($>))
-import Data.Foldable (for_, any, fold)
+import Data.Foldable (for_, any, fold, foldMap)
 import Data.Traversable (for)
 import Data.List (List(..), (..), toList, fromList, null)
 import qualified Data.List.Lazy as Lazy
@@ -184,10 +184,11 @@ main = do
              , D.filled (D.fillColor lightGreen)
                         (D.rectangle 45.0  (level.entry - level.door / 2.0) 5.0 level.door <>
                          D.rectangle 750.0 (level.exit  - level.door / 2.0) 5.0 level.door)
-             ] ++
-             map (\star -> D.outlined (D.outlineColor lightGreen) 
-                                      (D.circle star.x star.y star.r))
-                 (fromList level.stars)
+             , D.shadow (D.shadowColor D.white <> D.shadowBlur 4.0) $
+                 foldMap (\star -> D.outlined (D.outlineColor lightGreen) 
+                                              (D.circle star.x star.y star.r))
+                         level.stars
+             ]
         
       renderPath :: List Point -> D.Drawing
       renderPath path | not null path =
