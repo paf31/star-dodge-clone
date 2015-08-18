@@ -2474,7 +2474,7 @@ var PS = { };
                       var _2 = Control_Monad_Eff_Random.randomRange(-d)(d)();
                       var _1 = Control_Monad_Eff_Random.randomRange(-d)(d)();
                       return Prelude["return"](Control_Monad_Eff.applicativeEff)({
-                          x: 100.0 + Data_Int.toNumber(_12.value0) * 70.0 + _2, 
+                          x: 100.0 + Data_Int.toNumber(_12.value0) * 75.0 + _2, 
                           y: 100.0 + Data_Int.toNumber(_12.value1) * 70.0 + _1, 
                           r: r
                       })();
@@ -2666,7 +2666,7 @@ var PS = { };
           var background = function (levels_1) {
               var level = Data_Maybe_Unsafe.fromJust(Data_List_Lazy.head(levels_1));
               return Data_Foldable.fold(Data_Foldable.foldableArray)(Graphics_Drawing.monoidDrawing)([ Graphics_Drawing.outlined(Graphics_Drawing.outlineColor(lightGreen))(Prelude["<>"](Graphics_Drawing.semigroupShape)(Graphics_Drawing.rectangle(50.0)(50.0)(700.0)(400.0))(Graphics_Drawing.rectangle(45.0)(45.0)(710.0)(410.0))), Graphics_Drawing.filled(Graphics_Drawing.fillColor(lightGreen))(Prelude["<>"](Graphics_Drawing.semigroupShape)(Graphics_Drawing.rectangle(45.0)(level.entry - level.door / 2.0)(5.0)(level.door))(Graphics_Drawing.rectangle(750.0)(level.exit - level.door / 2.0)(5.0)(level.door))), Graphics_Drawing.shadow(Prelude["<>"](Graphics_Drawing.semigroupShadow)(Graphics_Drawing.shadowColor(Graphics_Drawing_Color.white))(Graphics_Drawing.shadowBlur(4.0)))(Data_Foldable.foldMap(Data_List.foldableList)(Graphics_Drawing.monoidDrawing)(function (star) {
-                  return Graphics_Drawing.outlined(Graphics_Drawing.outlineColor(lightGreen))(Graphics_Drawing.circle(star.x)(star.y)(star.r));
+                  return Graphics_Drawing.filled(Graphics_Drawing.fillColor(lightGreen))(Graphics_Drawing.circle(star.x)(star.y)(star.r));
               })(level.stars)) ]);
           };
           var scene = function (_18) {

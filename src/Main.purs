@@ -97,7 +97,7 @@ unsafeLevel level = unsafePure do
   stars <- for (Tuple <$> 0 .. 8 <*> 0 .. 4) \(Tuple x y) -> do
     dx <- randomRange (-d) d
     dy <- randomRange (-d) d
-    return { x: 100.0 + toNumber x * 70.0 + dx
+    return { x: 100.0 + toNumber x * 75.0 + dx
            , y: 100.0 + toNumber y * 70.0 + dy
            , r: r
            }
@@ -185,7 +185,7 @@ main = do
                         (D.rectangle 45.0  (level.entry - level.door / 2.0) 5.0 level.door <>
                          D.rectangle 750.0 (level.exit  - level.door / 2.0) 5.0 level.door)
              , D.shadow (D.shadowColor D.white <> D.shadowBlur 4.0) $
-                 foldMap (\star -> D.outlined (D.outlineColor lightGreen) 
+                 foldMap (\star -> D.filled (D.fillColor lightGreen) 
                                               (D.circle star.x star.y star.r))
                          level.stars
              ]
