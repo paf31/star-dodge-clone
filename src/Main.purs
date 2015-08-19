@@ -127,17 +127,17 @@ main = do
   let initialState :: Lazy.List Level -> GameState
       initialState levels = Waiting { path: Nil, nextLevel: levels }
   
-      update :: Inputs -> Milliseconds -> GameState -> Maybe GameState
+      update :: Inputs -> Milliseconds -> GameState -> Either (Tuple GameState GameState) GameState
       update inputs elapsed (Playing state@{ path: Cons hd tl })
         | testCollision (fromJust (Lazy.head state.level)) state.path 
-          = Just $ Waiting { path: state.path, nextLevel: state.level }
+          = Left (Tuple (Waiting { path: state.path, nextLevel: state.level }) (newGame state.level))
         | (state.direction == Up) == inputs.space 
           = case move (fromJust (Lazy.head state.level)) hd inputs.space elapsed of
-              Just p -> Just $ playing (Cons p tl) state.level inputs
-              Nothing -> Just $ initialState (fromJust (Lazy.tail state.level))
+              Just p -> Right $ playing (Cons p tl) state.level inputs
+              Nothing -> let next = fromJust (Lazy.tail state.level) 
+                         in Left (Tuple (initialState next) (newGame next))
         | otherwise
-          = Just $ playing (Cons hd (Cons hd tl)) state.level inputs
-      update inputs _ w@(Waiting { nextLevel: nextLevel }) = if inputs.space then Just (newGame nextLevel) else Nothing
+          = Right $ playing (Cons hd (Cons hd tl)) state.level inputs
 
       testCollision :: Level -> List Point -> Boolean
       testCollision level (Cons p1 (Cons p2 _))
@@ -217,11 +217,11 @@ main = do
         , renderPath state.path
         ]
  
-      loop :: GameState -> Eff _ Unit
-      loop state = do
+      loop :: Lazy.List Level -> Eff _ Unit
+      loop levels = do
         clearCanvas
-        D.render ctx $ scene state
-        go state
+        D.render ctx $ scene (initialState levels)
+        onSpaceBarOnce (go (newGame levels))
         where
         go state = do
           t0 <- nowEpochMilliseconds
@@ -229,11 +229,14 @@ main = do
           requestAnimationFrame do
             t1 <- nowEpochMilliseconds
             case update inputs (t1 - t0) state of
-              Just newState -> do
+              Right newState -> do
                 clearCanvas
                 D.render ctx $ scene newState 
                 go newState
-              Nothing -> onSpaceBarOnce (go state)
+              Left (Tuple now next) -> do
+                clearCanvas
+                D.render ctx $ scene now 
+                onSpaceBarOnce (go next)
  
-  loop (initialState levels)
+  loop levels
 

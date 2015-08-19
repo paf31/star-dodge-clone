@@ -27,9 +27,11 @@ exports.onSpaceBarOnce = function(f) {
             if (e.keyCode === 32) {
                 f();
             }
-            window.removeEventListener("keydown", handler);
+            window.removeEventListener("keypress", handler);
         };
-        
-        window.addEventListener("keydown", handler);
+       
+        setTimeout(function() { 
+            window.addEventListener("keypress", handler);
+        }, 500);
     };
 };
