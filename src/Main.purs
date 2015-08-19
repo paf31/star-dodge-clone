@@ -52,7 +52,8 @@ type Star =
   }
   
 type Level = 
-  { stars :: List Star
+  { level :: Int
+  , stars :: List Star
   , door  :: Number
   , speed :: Number
   , entry :: Number
@@ -103,7 +104,7 @@ unsafeLevel level = unsafePure do
            }
   entry <- randomRange (50.0 + door / 2.0) (450.0 - door / 2.0)
   exit  <- randomRange (50.0 + door / 2.0) (450.0 - door / 2.0)
-  return { stars: stars, door: door, speed: speed, entry: entry, exit: exit }
+  return { level: level + 1, stars: stars, door: door, speed: speed, entry: entry, exit: exit }
   where
   unsafePure :: forall eff a. Eff eff a -> a
   unsafePure = runPure <<< Control.Monad.Eff.Unsafe.unsafeInterleaveEff
@@ -118,6 +119,10 @@ main = do
   inputsRef <- newRef { space: false }
   
   onSpaceBar (\b -> modifyRef inputsRef (_ { space = b }))
+
+  let intro = "Press Space to Start"
+  C.setFont "20px VT323" ctx
+  introWidth <- C.measureText ctx intro
 
   let initialState :: Lazy.List Level -> GameState
       initialState levels = Waiting { path: Nil, nextLevel: levels }
@@ -174,6 +179,9 @@ main = do
       lightGreen :: D.Color
       lightGreen = D.lighten 0.7 D.green
 
+      vt323 :: D.Font
+      vt323 = D.font (D.customFont "VT323") 20 mempty
+
       background :: Lazy.List Level -> D.Drawing
       background levels =
         let level = fromJust (Lazy.head levels)
@@ -188,6 +196,7 @@ main = do
                  foldMap (\star -> D.filled (D.fillColor lightGreen) 
                                               (D.circle star.x star.y star.r))
                          level.stars
+             , D.text vt323 50.0 40.0 (D.fillColor lightGreen) ("Level: " <> show level.level)
              ]
         
       renderPath :: List Point -> D.Drawing
@@ -200,6 +209,8 @@ main = do
       scene (Waiting w) = fold 
         [ background w.nextLevel
         , renderPath w.path
+        , D.shadow (D.shadowColor D.black <> D.shadowBlur 8.0) $
+            D.text vt323 (400.0 - introWidth.width / 2.0) 275.0 (D.fillColor lightGreen) intro
         ]
       scene (Playing state) = fold   
         [ background state.level
